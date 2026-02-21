@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 
 from firebase import invia_push
 
+#TODO MODIFICARE  FUNC PER  RIPETIZIONE
 # CREA TABELLE
 Base.metadata.create_all(bind=engine)
 
