@@ -1,0 +1,87 @@
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr
+from datetime import datetime
+
+from Models.models import Task,User
+
+
+class RegistraUtente(BaseModel):
+
+    nome_utente : str
+    email : EmailStr
+    password : str
+
+    class Config:
+        from_attributes = True
+
+class Login(BaseModel):
+
+    email : EmailStr
+    password : str
+
+    class Config:
+        from_attributes = True
+
+class UtenteNoPassw(BaseModel):
+
+    nome_utente : str
+    email : str
+
+
+    class Config:
+        from_attributes = True
+
+
+class CreaTask(BaseModel):
+    descrizione : str
+    task_datetime : datetime
+    titolo : str
+    completato : bool = False
+    user_id : int
+    isRepeating : bool = False
+    every : int = 0
+    option : str = ""
+
+
+    class Config:
+        from_attributes = True
+
+class GetTask(BaseModel):
+    id_task : int
+    descrizione : str
+    task_datetime : datetime
+    titolo : str
+    completato : bool = False
+    user_id : int
+    isRepeating : bool = False
+    every : int = 0
+    option : str = ""
+
+
+    class Config:
+        from_attributes = True
+
+
+class UpdateTask(BaseModel):
+    descrizione : Optional[str] = None
+    task_datetime : Optional[datetime] = None
+    titolo : Optional[str] = None
+    completato : Optional[bool] = None
+    user_id : Optional[int] = None
+    isRepeating :bool = False
+    every : int = 0
+    option : str = ""
+
+    class Config:
+        from_attributes = True
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+    class Config:
+        from_attributes = True
+
+class TokenRequest(BaseModel):
+    fcm_token: str
+    class Config:
+        from_attributes = True

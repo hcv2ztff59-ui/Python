@@ -1,0 +1,6 @@
+FastAPI
+uvicorn
+sqlalchemy
+firebase-admin
+apscheduler
+python-dotenv

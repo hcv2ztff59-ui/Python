@@ -1,0 +1,20 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:pyenv",
+    "python-envs.pythonProjects": [],
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "pippo",
+            "database": "database",
+            "username": "root"
+        }
+    ]
+}
