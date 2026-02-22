@@ -67,12 +67,13 @@ class GetTask(BaseModel):
 class UpdateTask(BaseModel):
     descrizione : Optional[str] = None
     task_datetime : Optional[datetime] = None
+    task_datetime_repeat : Optional[datetime] = None 
     titolo : Optional[str] = None
     completato : Optional[bool] = None
     user_id : Optional[int] = None
     isRepeating :bool = False
-    every : int = 0
-    option : str = ""
+    every : Optional[int] = None
+    option : Optional[str] = None
 
     class Config:
         from_attributes = True
