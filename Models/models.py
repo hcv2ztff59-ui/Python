@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,14 +23,19 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id_task : Mapped[int] = mapped_column(Integer, primary_key=True)
+    
     task_datetime : Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    task_datetime_repeat : Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
     titolo : Mapped[str] = mapped_column(String(50))
     descrizione : Mapped[str] = mapped_column(String)
     completato : Mapped[bool] = mapped_column(Boolean,default=False)
     user_id : Mapped[int] = mapped_column(ForeignKey("users.id"))
     isRepeating : Mapped[bool] = mapped_column(Boolean)
     every : Mapped[int] = mapped_column(Integer,nullable= True)
-    option : Mapped[String] = mapped_column(Integer,nullable= True)
+    option : Mapped[String] = mapped_column(String,nullable= True)
 
 
 

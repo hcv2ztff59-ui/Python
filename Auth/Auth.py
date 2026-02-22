@@ -20,7 +20,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/login")
 def crea_token(data: dict):
     to_encode = data.copy()
     # delta era minutes ma per test lo metto a secondi
-    expire = datetime.utcnow() + timedelta(seconds=DEBUG_ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + timedelta(minutes=DEBUG_ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire,"tipo":"access_token"})
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -29,7 +29,7 @@ def crea_token(data: dict):
 def crea_refresh_token(data: dict):
     to_encode = data.copy()
     # delta era days ma per test lo metto a minuti
-    expire = datetime.utcnow() + timedelta(minutes=DEBUG_ACCESS_REFRESH_TOKEN_EXPIRE_DAYS)
+    expire = datetime.utcnow() + timedelta(days=DEBUG_ACCESS_REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire,"type":"refresh_token"})
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

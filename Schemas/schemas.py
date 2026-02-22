@@ -54,7 +54,7 @@ class GetTask(BaseModel):
     titolo : str
     completato : bool = False
     user_id : int
-    isRepeating : bool = False
+    isRepeating :bool = False
     every : int = 0
     option : str = ""
 

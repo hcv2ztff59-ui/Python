@@ -1,5 +1,6 @@
 from typing import List
-
+from datetime import timedelta,datetime
+from dateutil.relativedelta import relativedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -50,7 +51,13 @@ def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_c
     if not current_user['email'] or not current_user['id_utente']:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    db_task = Task(titolo = task.titolo, descrizione = task.descrizione, task_datetime = task.task_datetime, completato = task.completato, user_id = current_user['id_utente'],isRepeating = task.isRepeating, every = task.every, option = task.option)
+    db_task = Task(titolo = task.titolo, descrizione = task.descrizione, task_datetime = datetime.now() , completato = task.completato, user_id = current_user['id_utente'],isRepeating = task.isRepeating, every = task.every, option = task.option)
+    
+    db_task.task_datetime_repeat = task.task_datetime
+
+                            
+       
+    
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
@@ -72,6 +79,7 @@ def task_completati( db = Depends(get_db), current_user = Depends(get_current_us
     print(f"accesso effettuato come {current_user['email']}")
     return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.completato == True).all()
 
+# todo aggiornare per data ripetizione
 @router.patch("/modifica_task")
 async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db), current_user = Depends(get_current_user)):
 
