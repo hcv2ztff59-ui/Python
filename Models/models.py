@@ -23,8 +23,9 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id_task : Mapped[int] = mapped_column(Integer, primary_key=True)
-    
+    #datetime di creazione dell'evento
     task_datetime : Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # datetime di lancio evento
     task_datetime_repeat : Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),
         nullable=True
@@ -33,8 +34,11 @@ class Task(Base):
     descrizione : Mapped[str] = mapped_column(String)
     completato : Mapped[bool] = mapped_column(Boolean,default=False)
     user_id : Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # è un evento ripetuto??
     isRepeating : Mapped[bool] = mapped_column(Boolean)
+    # ogni quanti giorni/settimane/mesi/anni
     every : Mapped[int] = mapped_column(Integer,nullable= True)
+    # giorni/settimane/mesi/anni
     option : Mapped[String] = mapped_column(String,nullable= True)
 
 

@@ -51,6 +51,7 @@ class GetTask(BaseModel):
     id_task : int
     descrizione : str
     task_datetime : datetime
+    task_datetime_repeat : datetime
     titolo : str
     completato : bool = False
     user_id : int
