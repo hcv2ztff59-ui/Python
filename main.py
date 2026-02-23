@@ -10,6 +10,7 @@ from Routers.task import router as task
 from database import Base, engine, SessionLocal
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timezone, timedelta
+from dateutil.relativedelta import relativedelta
 
 from firebase import invia_push
 
@@ -36,18 +37,16 @@ def set_for_next_repeat_days(task: Task):
    
     task.task_datetime_repeat = task.task_datetime_repeat + timedelta(days=task.every)
 
-    
-    
-
-
 def set_for_next_repeat_weeks(task: Task):
-    task.task_datetime_repeat = task.task_datetime_repeat + timedelta(week=task.every)
+    task.task_datetime_repeat = task.task_datetime_repeat + timedelta(weeks=task.every)
 
 def set_for_next_repeat_months(task: Task):
-    pass
+    task.task_datetime_repeat = task.task_datetime_repeat + relativedelta(months=task.every)
+
 
 def set_for_next_repeat_years(task: Task):
-    pass
+    task.task_datetime_repeat = task.task_datetime_repeat + relativedelta(years=task.every)
+
 
 def controlla_todo():
     db = SessionLocal()
@@ -95,25 +94,27 @@ def controlla_todo():
                         set_for_next_repeat_weeks(todo)
                         
                     if todo.option == "Mesi":
-                         print(f"Ripetizione ogni {todo.every} Mesi")
+                            print(f"Ripetizione ogni {todo.every} Mesi")
+                            set_for_next_repeat_months(todo)
                     if todo.option == "Anni":
-                         print(f"Ripetizione ogni {todo.every} Anni")            
+                            print(f"Ripetizione ogni {todo.every} Anni")  
+                            set_for_next_repeat_years(todo)          
 
-                tokens = [ t.fcm_token for t in user_token ]
-                invia_push(tokens,todo.titolo,todo.descrizione)
+                    tokens = [ t.fcm_token for t in user_token ]
+                    invia_push(tokens,todo.titolo,todo.descrizione)
                 if not todo.isRepeating:
                     todo.completato = True
-                print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
+                    print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
 
             if not todo.isRepeating:
                 todo.completato = True
-            print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
-            #manda push notifiction a todo.user_id
+                print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
+                #manda push notifiction a todo.user_id
         db.commit()
 
     db.close()
 
-scheduler.add_job(controlla_todo, "interval", seconds=90)
+scheduler.add_job(controlla_todo, "interval", seconds=60)
 
 app = FastAPI(lifespan=lifespan)
 
@@ -132,4 +133,4 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

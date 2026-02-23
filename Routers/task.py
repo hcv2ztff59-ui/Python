@@ -21,7 +21,7 @@ def get_db():
     finally:
         db.close()
 
-"""""
+
 @router.get("/test-push")
 def test_push():
 
@@ -42,7 +42,7 @@ def create_token(data: TokenRequest,db: Session = Depends(get_db), current_user 
     db.commit()
 
     return {"status":"Token creato"}
-"""
+
 
 
 @router.post("/crea_task", response_model = CreaTask)
