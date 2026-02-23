@@ -24,7 +24,7 @@ class Task(Base):
 
     id_task : Mapped[int] = mapped_column(Integer, primary_key=True)
     #datetime di creazione dell'evento
-    task_datetime : Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    creation_task_datetime : Mapped[datetime] = mapped_column(DateTime(timezone=True))
     # datetime di lancio evento
     task_datetime_repeat : Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),

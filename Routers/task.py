@@ -44,23 +44,26 @@ def create_token(data: TokenRequest,db: Session = Depends(get_db), current_user 
     return {"status":"Token creato"}
 """
 
+
 @router.post("/crea_task", response_model = CreaTask)
 def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_current_user)):
+    print(" CREA TASK CHIAMATA")
     print(f"accesso effettuato come {current_user['email']}")
     print(f"id  {current_user['id_utente']}")
     if not current_user['email'] or not current_user['id_utente']:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    db_task = Task(titolo = task.titolo, descrizione = task.descrizione, task_datetime = datetime.now() , completato = task.completato, user_id = current_user['id_utente'],isRepeating = task.isRepeating, every = task.every, option = task.option)
-    
-    db_task.task_datetime_repeat = task.task_datetime
-
-                            
+    try:
+        # L'orario di creazione del task lo faccio generare a lui
+        db_task = Task(titolo = task.titolo, descrizione = task.descrizione, creation_task_datetime = task.creation_task_datetime , task_datetime_repeat = task.task_datetime_repeat , completato = task.completato, user_id = current_user['id_utente'],isRepeating = task.isRepeating, every = task.every, option = task.option)
        
-    
-    db.add(db_task)
-    db.commit()
-    db.refresh(db_task)
+        db.add(db_task)
+        db.commit()
+        db.refresh(db_task)
+    except Exception as e:
+        db.rollback()
+        print(f"errore {e}")
+
     return task
 
 @router.get("/tutti_task", response_model = List[GetTask])
@@ -90,6 +93,9 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
     for key, value in update_data.items():
         print(f"${key} - ${value}\n")
 
+    update_data.pop("id_task", None)
+    update_data.pop("user_id", None)
+    
     for key, value in update_data.items():
         setattr(task_db, key, value)
 

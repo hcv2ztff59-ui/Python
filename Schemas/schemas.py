@@ -35,7 +35,8 @@ class UtenteNoPassw(BaseModel):
 
 class CreaTask(BaseModel):
     descrizione : str
-    task_datetime : datetime
+    creation_task_datetime : datetime
+    task_datetime_repeat : datetime
     titolo : str
     completato : bool = False
     user_id : int
@@ -50,7 +51,7 @@ class CreaTask(BaseModel):
 class GetTask(BaseModel):
     id_task : int
     descrizione : str
-    task_datetime : datetime
+    creation_task_datetime : datetime
     task_datetime_repeat : datetime
     titolo : str
     completato : bool = False
@@ -66,7 +67,6 @@ class GetTask(BaseModel):
 
 class UpdateTask(BaseModel):
     descrizione : Optional[str] = None
-    task_datetime : Optional[datetime] = None
     task_datetime_repeat : Optional[datetime] = None 
     titolo : Optional[str] = None
     completato : Optional[bool] = None

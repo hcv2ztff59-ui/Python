@@ -75,7 +75,7 @@ def controlla_todo():
                     if task_all.option == "Anni":
                          print(f"Ripetizione ogni {task_all.every} Anni") 
 
-            print(f"{task_all.task_datetime} per l'id utente {task_all.user_id} Titolo: {task_all.titolo}")
+            print(f"{task_all.task_datetime_repeat} per l'id utente {task_all.user_id} Titolo: {task_all.titolo}")
         db.commit()
 
 
