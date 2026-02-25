@@ -13,7 +13,7 @@ from datetime import datetime, timezone, timedelta
 from dateutil.relativedelta import relativedelta
 
 from firebase import invia_push
-
+# AGGIUNGERE ALLA TABELLA FINE RIPETIZIONE E LOGICA IN CONTROLLA TODO
 #TODO MODIFICARE  FUNC PER  RIPETIZIONE
 # CREA TABELLE
 Base.metadata.create_all(bind=engine)
