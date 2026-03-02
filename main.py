@@ -78,6 +78,7 @@ def controlla_todo():
         db.commit()
 
 
+    # todo gestire le ripetizioni per fine data e occorrenze
     db_results = db.query(Task).filter(Task.task_datetime_repeat <= now, Task.completato == False).all()
     if db_results:
 

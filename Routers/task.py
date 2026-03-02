@@ -44,6 +44,9 @@ def create_token(data: TokenRequest,db: Session = Depends(get_db), current_user 
     return {"status":"Token creato"}
 
 '''
+@router.get("/ping")
+def ping():
+    return {"ok":1}
 
 @router.post("/crea_task", response_model = CreaTask)
 def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_current_user)):
@@ -55,7 +58,18 @@ def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_c
 
     try:
         # L'orario di creazione del task lo faccio generare a lui
-        db_task = Task(titolo = task.titolo, descrizione = task.descrizione, creation_task_datetime = task.creation_task_datetime , task_datetime_repeat = task.task_datetime_repeat , completato = task.completato, user_id = current_user['id_utente'],isRepeating = task.isRepeating, every = task.every, option = task.option)
+        db_task = Task(titolo = task.titolo, 
+                       descrizione = task.descrizione, 
+                       creation_task_datetime = task.creation_task_datetime , 
+                       task_datetime_repeat = task.task_datetime_repeat , 
+                       completato = task.completato,
+                       user_id = current_user['id_utente'],
+                       isRepeating = task.isRepeating, 
+                       every = task.every, 
+                       option = task.option,
+                       end_recurrency_time = task.end_recurrency_time,
+                       dateTime_task_end = task.dateTime_task_end
+                       )
        
         db.add(db_task)
         db.commit()

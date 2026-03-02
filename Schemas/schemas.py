@@ -41,9 +41,10 @@ class CreaTask(BaseModel):
     completato : bool = False
     user_id : int
     isRepeating : bool = False
-    every : int = 0
-    option : str = ""
-
+    every : Optional[int] = None
+    option : Optional[str] = None
+    end_recurrency_time : Optional[int] = None
+    dateTime_task_end : Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -57,8 +58,10 @@ class GetTask(BaseModel):
     completato : bool = False
     user_id : int
     isRepeating :bool = False
-    every : int = 0
-    option : str = ""
+    every : Optional[int] = None
+    option : Optional[str] = None
+    end_recurrency_time : Optional[int] = None
+    dateTime_task_end : Optional[datetime] = None
 
 
     class Config:
@@ -74,6 +77,8 @@ class UpdateTask(BaseModel):
     isRepeating :bool = False
     every : Optional[int] = None
     option : Optional[str] = None
+    end_recurrency_time : Optional[int] = None
+    dateTime_task_end : Optional[datetime] = None
 
     class Config:
         from_attributes = True
