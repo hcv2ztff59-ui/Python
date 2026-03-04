@@ -33,6 +33,12 @@ async def lifespan(app: FastAPI):
     yield
     scheduler.shutdown()
 
+def test(task: Task):
+   
+    
+    task.task_datetime_repeat = task.task_datetime_repeat + timedelta(minutes=1)
+ 
+
 def set_for_next_repeat_days(task: Task):
    
     task.task_datetime_repeat = task.task_datetime_repeat + timedelta(days=task.every)
@@ -64,8 +70,15 @@ def controlla_todo():
              #todo continuare qua deve calcolare il prossimo evento 
             if task_all.isRepeating == True:
                     if task_all.option == "Giorni":
-                        print(f"Ripetizione ogni {task_all.every} Giorni")
-                        
+                        print(f"Ripetizione ogni {task_all.every} Giorni --- prossima ripetizione {task_all.task_datetime_repeat} ")
+                      
+                   # if task_all.option == "Giorni":
+                  #      print(f"Ripetizione ogni {task_all.every} Giorni")
+                   #     if task_all.end_recurrency_time != None:
+                    #        if task_all.end_recurrency_time == 0:
+                     #           print("ripetizione == 0");
+                      #      else:
+                       #         task_all.end_recurrency_time -= 1   
                     if task_all.option == "Settimane":
                         print(f"Ripetizione ogni {task_all.every} Settimane")
                         
@@ -73,8 +86,9 @@ def controlla_todo():
                          print(f"Ripetizione ogni {task_all.every} Mesi")
                     if task_all.option == "Anni":
                          print(f"Ripetizione ogni {task_all.every} Anni") 
+                    
 
-            print(f"{task_all.task_datetime_repeat} per l'id utente {task_all.user_id} Titolo: {task_all.titolo}")
+            print(f"{task_all.task_datetime_repeat} per l'id utente {task_all.user_id} Titolo: {task_all.titolo} ogni {task_all.every} numero ricorrenze {task_all.end_recurrency_time} ")
         db.commit()
 
 
@@ -83,33 +97,62 @@ def controlla_todo():
     if db_results:
 
         for todo in db_results:
-            user_token = db.query(NotificationToken).filter(NotificationToken.id_user_ref == todo.user_id).all()
-            if user_token:
-                if todo.isRepeating == True:
-                    if todo.option == "Giorni":
-                        print(f"Ripetizione ogni {todo.every} Giorni")
-                        set_for_next_repeat_days(todo)
-                        
-                    if todo.option == "Settimane":
-                        print(f"Ripetizione ogni {todo.every} Settimane")
-                        set_for_next_repeat_weeks(todo)
-                        
-                    if todo.option == "Mesi":
-                            print(f"Ripetizione ogni {todo.every} Mesi")
-                            set_for_next_repeat_months(todo)
-                    if todo.option == "Anni":
-                            print(f"Ripetizione ogni {todo.every} Anni")  
-                            set_for_next_repeat_years(todo)          
+            #user_token = db.query(NotificationToken).filter(NotificationToken.id_user_ref == todo.user_id).all()
+           # if user_token:
+            if todo.isRepeating == True:
+                if todo.option == "Giorni":
+                    print(f"Ripetizione ogni {todo.every}")
+                    set_for_next_repeat_days(todo)
+                    if todo.end_recurrency_time != None:
+                        if todo.end_recurrency_time != 0:
+                           todo.end_recurrency_time -=1
+                           if todo.end_recurrency_time == 0:
+                                   todo.completato = True
+                                   print("\n\nEvento Completato\n\n")  
 
-                    tokens = [ t.fcm_token for t in user_token ]
-                    invia_push(tokens,todo.titolo,todo.descrizione)
-                if not todo.isRepeating:
-                    todo.completato = True
-                    print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
+                # if todo.option == "Giorni":
+                #    print(f"Ripetizione ogni {todo.every} Giorni")
+                    #   set_for_next_repeat_days(todo)
+                    
+                if todo.option == "Settimane":
+                    print(f"Ripetizione ogni {todo.every} Settimane")
+                    set_for_next_repeat_weeks(todo)
+                    if todo.end_recurrency_time != None:
+                        if todo.end_recurrency_time != 0:
+                           todo.end_recurrency_time -=1
+                           if todo.end_recurrency_time == 0:
+                                   todo.completato = True
+                                   print("\n\nEvento Completato\n\n")  
+                    
+                if todo.option == "Mesi":
+                        print(f"Ripetizione ogni {todo.every} Mesi")
+                        set_for_next_repeat_months(todo)
+                        if todo.end_recurrency_time != None:
+                            if todo.end_recurrency_time != 0:
+                                todo.end_recurrency_time -=1
+                                if todo.end_recurrency_time == 0:
+                                    todo.completato = True
+                                    print("\n\nEvento Completato\n\n")  
+                if todo.option == "Anni":
+                        print(f"Ripetizione ogni {todo.every} Anni")  
+                        set_for_next_repeat_years(todo)   
+                        if todo.end_recurrency_time != None:
+                            if todo.end_recurrency_time != 0:
+                                todo.end_recurrency_time -=1
+                                if todo.end_recurrency_time == 0:
+                                   todo.completato = True
+                                   print("\n\nEvento Completato\n\n")  
+                    
 
+              #  tokens = [ t.fcm_token for t in user_token ]
+              #  invia_push(tokens,todo.titolo,todo.descrizione)
             if not todo.isRepeating:
                 todo.completato = True
                 print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
+
+          #  if not todo.isRepeating:
+           #     todo.completato = True
+            #    print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
                 #manda push notifiction a todo.user_id
         db.commit()
 
