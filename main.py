@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
 def test(task: Task):
    
     
-    task.task_datetime_repeat = task.task_datetime_repeat + timedelta(minutes=1)
+    task.task_datetime_repeat = task.task_datetime_repeat + timedelta(minutes=2)
  
 
 def set_for_next_repeat_days(task: Task):
@@ -53,6 +53,24 @@ def set_for_next_repeat_months(task: Task):
 def set_for_next_repeat_years(task: Task):
     task.task_datetime_repeat = task.task_datetime_repeat + relativedelta(years=task.every)
 
+def check_recurrency_end_task(task: Task) -> bool:
+
+    if task.end_recurrency_time != None:
+        if (task.end_recurrency_time) < 1:
+            task.end_recurrency_time = 0
+          #  print("check_recurrency_end_task; Uguale a ZERO")
+            return True    
+           
+        else:
+            task.end_recurrency_time -=1
+         #   print(f"check_recurrency_end_task; {task.end_recurrency_time}")
+            return False
+           
+
+    if task.dateTime_task_end != None:
+        if task.end_recurrency_time == datetime.now():
+            return True
+    return False
 
 def controlla_todo():
     db = SessionLocal()
@@ -61,35 +79,7 @@ def controlla_todo():
     # formato datetime 2026-01-23T10:30:00
     #filtro
     prossima_ora = now + timedelta(hours=1)
-    db_await_result = db.query(Task).filter(Task.task_datetime_repeat > now, Task.completato == False).all()
-    if db_await_result:
-        print(f"Prossimi eventi:\n")
-        for task_all in db_await_result:
-             
-
-             #todo continuare qua deve calcolare il prossimo evento 
-            if task_all.isRepeating == True:
-                    if task_all.option == "Giorni":
-                        print(f"Ripetizione ogni {task_all.every} Giorni --- prossima ripetizione {task_all.task_datetime_repeat} ")
-                      
-                   # if task_all.option == "Giorni":
-                  #      print(f"Ripetizione ogni {task_all.every} Giorni")
-                   #     if task_all.end_recurrency_time != None:
-                    #        if task_all.end_recurrency_time == 0:
-                     #           print("ripetizione == 0");
-                      #      else:
-                       #         task_all.end_recurrency_time -= 1   
-                    if task_all.option == "Settimane":
-                        print(f"Ripetizione ogni {task_all.every} Settimane")
-                        
-                    if task_all.option == "Mesi":
-                         print(f"Ripetizione ogni {task_all.every} Mesi")
-                    if task_all.option == "Anni":
-                         print(f"Ripetizione ogni {task_all.every} Anni") 
-                    
-
-            print(f"{task_all.task_datetime_repeat} per l'id utente {task_all.user_id} Titolo: {task_all.titolo} ogni {task_all.every} numero ricorrenze {task_all.end_recurrency_time} ")
-        db.commit()
+   
 
 
     # todo gestire le ripetizioni per fine data e occorrenze
@@ -101,51 +91,38 @@ def controlla_todo():
            # if user_token:
             if todo.isRepeating == True:
                 if todo.option == "Giorni":
-                    print(f"Ripetizione ogni {todo.every}")
-                    set_for_next_repeat_days(todo)
-                    if todo.end_recurrency_time != None:
-                        if todo.end_recurrency_time != 0:
-                           todo.end_recurrency_time -=1
-                           if todo.end_recurrency_time == 0:
-                                   todo.completato = True
-                                   print("\n\nEvento Completato\n\n")  
-
-                # if todo.option == "Giorni":
-                #    print(f"Ripetizione ogni {todo.every} Giorni")
-                    #   set_for_next_repeat_days(todo)
-                    
+              #     print(f"Ripetizione ogni {todo.every}")
+                    test(todo)
+                    #set_for_next_repeat_days(todo)
+                   # print(f"CHECK {check_recurrency_end_task(todo)}");
+                    if check_recurrency_end_task(todo):
+                        print("\n\nCOMPLETATO == TRUE!!!!!!\n\n")
+                        todo.completato = True
+      
                 if todo.option == "Settimane":
                     print(f"Ripetizione ogni {todo.every} Settimane")
                     set_for_next_repeat_weeks(todo)
-                    if todo.end_recurrency_time != None:
-                        if todo.end_recurrency_time != 0:
-                           todo.end_recurrency_time -=1
-                           if todo.end_recurrency_time == 0:
-                                   todo.completato = True
-                                   print("\n\nEvento Completato\n\n")  
+                    if check_recurrency_end_task(todo):
+                        todo.completato = True
                     
                 if todo.option == "Mesi":
                         print(f"Ripetizione ogni {todo.every} Mesi")
                         set_for_next_repeat_months(todo)
-                        if todo.end_recurrency_time != None:
-                            if todo.end_recurrency_time != 0:
-                                todo.end_recurrency_time -=1
-                                if todo.end_recurrency_time == 0:
-                                    todo.completato = True
-                                    print("\n\nEvento Completato\n\n")  
+                        if check_recurrency_end_task(todo):
+                            todo.completato = True
+
                 if todo.option == "Anni":
                         print(f"Ripetizione ogni {todo.every} Anni")  
                         set_for_next_repeat_years(todo)   
-                        if todo.end_recurrency_time != None:
-                            if todo.end_recurrency_time != 0:
-                                todo.end_recurrency_time -=1
-                                if todo.end_recurrency_time == 0:
-                                   todo.completato = True
-                                   print("\n\nEvento Completato\n\n")  
+                        if check_recurrency_end_task(todo):
+                            todo.completato = True 
                     
 
               #  tokens = [ t.fcm_token for t in user_token ]
               #  invia_push(tokens,todo.titolo,todo.descrizione)
+            if todo.completato:
+               print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
+
             if not todo.isRepeating:
                 todo.completato = True
                 print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
@@ -156,6 +133,41 @@ def controlla_todo():
                 #manda push notifiction a todo.user_id
         db.commit()
 
+
+        # STAMPA
+    db_await_result = db.query(Task).filter(Task.task_datetime_repeat >= now, Task.completato == False).all()
+    if db_await_result:
+        print(f"Prossimi eventi:\n")
+        for task_all in db_await_result:
+             
+
+             #todo continuare qua deve calcolare il prossimo evento 
+            if task_all.isRepeating == True:
+                    if task_all.option == "Giorni":
+                        print(f"Ripetizione ogni {task_all.every} Giorni --- prossima ripetizione {task_all.task_datetime_repeat} ")  
+                        if task_all.end_recurrency_time != None:
+                            if task_all.end_recurrency_time == 0:
+                                print("\tFine Ripetizione - Task Completato :) ");
+                            else:
+                                print(f"\tMancano {task_all.end_recurrency_time} ricorrenze :) ");
+                        if task_all.dateTime_task_end != None:
+                            if task_all.dateTime_task_end != datetime.now():
+                                    print(f"\Data fine Evento {task_all.dateTime_task_end} :) ");
+                            else:
+                                print(f"\tFine Task  :) ");
+
+                     
+                    if task_all.option == "Settimane":
+                        print(f"Ripetizione ogni {task_all.every} Settimane")
+                        
+                    if task_all.option == "Mesi":
+                         print(f"Ripetizione ogni {task_all.every} Mesi")
+                    if task_all.option == "Anni":
+                         print(f"Ripetizione ogni {task_all.every} Anni") 
+                    
+            if(task_all.end_recurrency_time != None):
+             print(f"\n---->{task_all.task_datetime_repeat} per l'id utente {task_all.user_id} Titolo: {task_all.titolo}{task_all.descrizione}  ogni {task_all.every} minuti\nnumero ricorrenze {task_all.end_recurrency_time}\ndata fine {task_all.dateTime_task_end} \n")
+        db.commit()
     db.close()
 
 scheduler.add_job(controlla_todo, "interval", seconds=60)
