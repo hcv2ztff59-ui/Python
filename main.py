@@ -16,6 +16,8 @@ from firebase import invia_push
 # AGGIUNGERE ALLA TABELLA FINE RIPETIZIONE E LOGICA IN CONTROLLA TODO
 #TODO MODIFICARE  FUNC PER  RIPETIZIONE
 # CREA TABELLE
+#todo se il server si spegne o ha un ionterruzzione deve ricalcolare tutte le date dei task
+
 Base.metadata.create_all(bind=engine)
 
 def get_db():
@@ -55,18 +57,14 @@ def set_for_next_repeat_years(task: Task):
     task.task_datetime_repeat = task.task_datetime_repeat + relativedelta(years=task.every)
 
 def check_recurrency_end_task(task: Task) -> bool:
-
+    print(f"---------------------------- >ricorrenza {task.end_recurrency_time }")
     if task.end_recurrency_time != None:
-        if (task.end_recurrency_time) < 1:
-            task.end_recurrency_time = 0
-          #  print("check_recurrency_end_task; Uguale a ZERO")
-            return True    
-           
-        else:
-            task.end_recurrency_time -=1
-         #   print(f"check_recurrency_end_task; {task.end_recurrency_time}")
-            return False
-           
+        task.end_recurrency_time -=1
+        if task.end_recurrency_time == 0:
+            return True
+    #   print(f"check_recurrency_end_task; {task.end_recurrency_time}")
+        else: return False
+
 
     if task.dateTime_task_end != None:
         if task.end_recurrency_time == datetime.now():

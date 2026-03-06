@@ -89,7 +89,7 @@ def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_u
 @router.get("/filtered_task", response_model = List[GetTask])
 def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
     print(f"accesso effettuato come {current_user['email']}")
-    return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.completato == False, Task.isTaskChanged == True).all()
+    return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.isTaskChanged == True).all()
 
 @router.get("/visualizza_task", response_model = List[GetTask])
 def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
