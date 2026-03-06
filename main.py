@@ -37,6 +37,7 @@ def test(task: Task):
    
     
     task.task_datetime_repeat = task.task_datetime_repeat + timedelta(minutes=2)
+    task.isTaskChanged = True
  
 
 def set_for_next_repeat_days(task: Task):
@@ -82,7 +83,7 @@ def controlla_todo():
    
 
 
-    # todo gestire le ripetizioni per fine data e occorrenze
+    # todo gestire le ripetizioni per fine data e occorrenze VERIFUCARE PERCHE QUANDO OCCORRENZA A ZERO FA UN CICLO IN PIU
     db_results = db.query(Task).filter(Task.task_datetime_repeat <= now, Task.completato == False).all()
     if db_results:
 
@@ -135,6 +136,8 @@ def controlla_todo():
 
 
         # STAMPA
+
+    print("******* STAMPA ********")
     db_await_result = db.query(Task).filter(Task.task_datetime_repeat >= now, Task.completato == False).all()
     if db_await_result:
         print(f"Prossimi eventi:\n")
@@ -169,6 +172,7 @@ def controlla_todo():
              print(f"\n---->{task_all.task_datetime_repeat} per l'id utente {task_all.user_id} Titolo: {task_all.titolo}{task_all.descrizione}  ogni {task_all.every} minuti\nnumero ricorrenze {task_all.end_recurrency_time}\ndata fine {task_all.dateTime_task_end} \n")
         db.commit()
     db.close()
+    print("***************")
 
 scheduler.add_job(controlla_todo, "interval", seconds=60)
 

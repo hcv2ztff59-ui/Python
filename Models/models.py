@@ -40,6 +40,7 @@ class Task(Base):
     every : Mapped[int] = mapped_column(Integer,nullable= True)
     # giorni/settimane/mesi/anni
     option : Mapped[String] = mapped_column(String,nullable= True)
+    isTaskChanged : Mapped[bool] = mapped_column(Boolean,default=False)
     end_recurrency_time : Mapped[int] = mapped_column(Integer,nullable= True)
     dateTime_task_end : Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),

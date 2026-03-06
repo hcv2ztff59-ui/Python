@@ -85,6 +85,11 @@ def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_u
     print(f"accesso effettuato come {current_user['email']}")
     return db.query(Task).filter(Task.user_id == current_user['id_utente']).all()
 
+# todo il problema che cercando solo task non completati e con modifica non mi restituisce quando il task e completato e il client non aggiorna da solo
+@router.get("/filtered_task", response_model = List[GetTask])
+def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
+    print(f"accesso effettuato come {current_user['email']}")
+    return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.completato == False, Task.isTaskChanged == True).all()
 
 @router.get("/visualizza_task", response_model = List[GetTask])
 def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
@@ -95,6 +100,7 @@ def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_u
 def task_completati( db = Depends(get_db), current_user = Depends(get_current_user)):
     print(f"accesso effettuato come {current_user['email']}")
     return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.completato == True).all()
+
 
 # todo aggiornare per data ripetizione
 @router.patch("/modifica_task")
@@ -109,6 +115,31 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
 
     update_data.pop("id_task", None)
     update_data.pop("user_id", None)
+    
+    
+    for key, value in update_data.items():
+        setattr(task_db, key, value)
+
+    db.commit()
+    db.refresh(task_db)
+
+    return {"msg":"Valori Aggiornati"}
+
+
+# todo aggiornare per data ripetizione
+@router.patch("/update_change_notify")
+async def update_change_notify(id_task:int,task_update: UpdateTask, db = Depends(get_db), current_user = Depends(get_current_user)):
+
+    print(f"accesso effettuato come {current_user['email']}")
+    task_db = db.query(Task).filter(Task.id_task == id_task,Task.user_id == current_user['id_utente']).first()
+    update_data = task_update.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        print(f"${key} - ${value}\n")
+
+    update_data.pop("id_task", None)
+    update_data.pop("user_id", None)
+    
     
     for key, value in update_data.items():
         setattr(task_db, key, value)
