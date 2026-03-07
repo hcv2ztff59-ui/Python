@@ -1,4 +1,4 @@
-#!/Users/davidemantia/Python/venv/bin/python3
+#!/Users/davide/Python/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

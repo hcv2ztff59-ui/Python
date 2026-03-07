@@ -15,7 +15,22 @@ DEBUG_ACCESS_REFRESH_TOKEN_EXPIRE_DAYS =5
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/login")
 
+def decode_token(token: str):
 
+    try:
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        return {
+            "id_utente": payload.get("id"),
+            "email": payload.get("sub")
+        }
+
+    except JWTError:
+        return None
 
 def crea_token(data: dict):
     to_encode = data.copy()

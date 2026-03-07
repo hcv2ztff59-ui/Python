@@ -1,6 +1,5 @@
 {
-    "python-envs.defaultEnvManager": "ms-python.python:pyenv",
-    "python-envs.pythonProjects": [],
+    "python-envs.defaultEnvManager": "ms-python.python:system",
     "sqltools.connections": [
         {
             "mysqlOptions": {
@@ -15,6 +14,12 @@
             "name": "pippo",
             "database": "database",
             "username": "root"
+        },
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "database",
+            "database": "${workspaceFolder:Python}/database.db"
         }
     ]
 }

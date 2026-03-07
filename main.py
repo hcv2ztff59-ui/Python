@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
 import firebase
+from Service.Socket import SocketManage
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from Auth.Auth import get_current_user
 from Models.models import Task, NotificationToken
 from Routers.user import router as user
@@ -11,6 +12,7 @@ from database import Base, engine, SessionLocal
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timezone, timedelta
 from dateutil.relativedelta import relativedelta
+from Auth.Auth import decode_token
 
 from firebase import invia_push
 # AGGIUNGERE ALLA TABELLA FINE RIPETIZIONE E LOGICA IN CONTROLLA TODO
@@ -19,6 +21,10 @@ from firebase import invia_push
 #todo se il server si spegne o ha un ionterruzzione deve ricalcolare tutte le date dei task
 
 Base.metadata.create_all(bind=engine)
+
+manager = SocketManage()
+
+
 
 def get_db():
     db = SessionLocal()
@@ -35,10 +41,12 @@ async def lifespan(app: FastAPI):
     yield
     scheduler.shutdown()
 
-def test(task: Task):
+async def test(task: Task):
    
     
     task.task_datetime_repeat = task.task_datetime_repeat + timedelta(minutes=2)
+    # todo da provare
+    await manager.send_to_user(task.user_id,task.task_datetime_repeat)
     task.isTaskChanged = True
  
 
@@ -180,6 +188,25 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(user)
 app.include_router(task)
 
+
+@app.websocket("/ws")
+async def socket_endpoint(websocket: WebSocket,current_user = Depends(get_current_user)):
+    
+    token = websocket.query_params.get("token")
+    user_id = decode_token(token)
+    
+    if user is None:
+        raise Exception("Invalid token")
+    
+    await manager.connect(user_id, websocket)
+
+    try:
+        while True:
+            # serve solo per mantenere viva la connessione
+            await websocket.receive_text()
+
+    except WebSocketDisconnect:
+        manager.disconnect(user_id, websocket)
 
 
 @app.get("/")
