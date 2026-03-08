@@ -1,4 +1,7 @@
 
+
+#TODO GESTIRE ECCEZZIONI SOCKET
+
 class SocketManage:
     def __init__(self):
         # user_id -> lista websocket
@@ -15,10 +18,10 @@ class SocketManage:
     def disconnect(self, user_id: int, websocket):
         self.active_connections[user_id].remove(websocket)
         if len(self.active_connections[user_id]) == 0:
-            self.active_connections[user_id]
+            del self.active_connections[user_id]
 
-    async def send_to_user(self, user_id: int, message: str):
-
+    async def send_to_user(self, user_id: int, message):
+        print("WS send:", user_id, message["task_id"],message["date_time_repeat"])
         if user_id in self.active_connections:
             for connection in self.active_connections[user_id]:
-                await connection.send_text(message)
+                await connection.send_json({"task_id":message["task_id"],"date_time_repeat":message["date_time_repeat"]})

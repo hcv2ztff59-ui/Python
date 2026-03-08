@@ -12,7 +12,8 @@ from database import Base, engine, SessionLocal
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timezone, timedelta
 from dateutil.relativedelta import relativedelta
-from Auth.Auth import decode_token
+from Auth.Auth import get_current_user_web_socket
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from firebase import invia_push
 # AGGIUNGERE ALLA TABELLA FINE RIPETIZIONE E LOGICA IN CONTROLLA TODO
@@ -33,7 +34,7 @@ def get_db():
     finally:
         db.close()
 
-scheduler = BackgroundScheduler()
+scheduler = AsyncIOScheduler()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,7 +47,7 @@ async def test(task: Task):
     
     task.task_datetime_repeat = task.task_datetime_repeat + timedelta(minutes=2)
     # todo da provare
-    await manager.send_to_user(task.user_id,task.task_datetime_repeat)
+    await manager.send_to_user(task.user_id,{"task_id": task.id_task , "date_time_repeat": task.task_datetime_repeat.isoformat()})
     task.isTaskChanged = True
  
 
@@ -79,7 +80,7 @@ def check_recurrency_end_task(task: Task) -> bool:
             return True
     return False
 
-def controlla_todo():
+async def controlla_todo() :
     db = SessionLocal()
 
     now = datetime.now()
@@ -99,7 +100,7 @@ def controlla_todo():
             if todo.isRepeating == True:
                 if todo.option == "Giorni":
               #     print(f"Ripetizione ogni {todo.every}")
-                    test(todo)
+                    await test(todo)
                     #set_for_next_repeat_days(todo)
                    # print(f"CHECK {check_recurrency_end_task(todo)}");
                     if check_recurrency_end_task(todo):
@@ -190,13 +191,16 @@ app.include_router(task)
 
 
 @app.websocket("/ws")
-async def socket_endpoint(websocket: WebSocket,current_user = Depends(get_current_user)):
+async def socket_endpoint(websocket: WebSocket):
     
     token = websocket.query_params.get("token")
-    user_id = decode_token(token)
+    user = get_current_user_web_socket(token)
     
     if user is None:
-        raise Exception("Invalid token")
+        await websocket.close()
+        return
+
+    user_id = user["id_utente"]
     
     await manager.connect(user_id, websocket)
 
@@ -218,4 +222,10 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info"
+    )

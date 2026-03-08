@@ -15,22 +15,25 @@ DEBUG_ACCESS_REFRESH_TOKEN_EXPIRE_DAYS =5
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/login")
 
-def decode_token(token: str):
-
+def get_current_user_web_socket(token: str):
     try:
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
-        return {
-            "id_utente": payload.get("id"),
-            "email": payload.get("sub")
-        }
+        email = payload.get("sub")
+        id_utente = payload.get("id")
+
+        if email is None:
+            raise HTTPException(status_code=401, detail="Token non valido")
+
+        return {"email": email, "id_utente": id_utente}
 
     except JWTError:
-        return None
+        raise HTTPException(
+            status_code = 401,
+            detail="Token non valido",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
 
 def crea_token(data: dict):
     to_encode = data.copy()
