@@ -62,7 +62,7 @@ class GetTask(BaseModel):
     option : Optional[str] = None
     end_recurrency_time : Optional[int] = None
     dateTime_task_end : Optional[datetime] = None
-    isTaskChanged : Optional[bool] = False
+   
 
 
     class Config:
@@ -80,7 +80,7 @@ class UpdateTask(BaseModel):
     option : Optional[str] = None
     end_recurrency_time : Optional[int] = None
     dateTime_task_end : Optional[datetime] = None
-    isTaskChanged : Optional[bool] = False
+    
 
     class Config:
         from_attributes = True

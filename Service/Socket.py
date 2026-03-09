@@ -20,8 +20,15 @@ class SocketManage:
         if len(self.active_connections[user_id]) == 0:
             del self.active_connections[user_id]
 
-    async def send_to_user(self, user_id: int, message):
-        print("WS send:", user_id, message["task_id"],message["date_time_repeat"])
+    async def send_complete_task_to_user(self, user_id: int, message):
+        print("WS send:", user_id, message)
         if user_id in self.active_connections:
             for connection in self.active_connections[user_id]:
-                await connection.send_json({"task_id":message["task_id"],"date_time_repeat":message["date_time_repeat"]})
+                await connection.send_json({"task_id":message["task_id"], "type": "complete_task", "completato":message["completato"]})
+               
+
+    async def send_occurrency_update_to_user(self, user_id: int, message):
+        print("WS send:", user_id, message)
+        if user_id in self.active_connections:
+            for connection in self.active_connections[user_id]:
+                    await connection.send_json({"task_id":message["task_id"],"type": "occurrency","date_time_repeat": message["date_time_repeat"], "end_recurrency_time":message["end_recurrency_time"]})

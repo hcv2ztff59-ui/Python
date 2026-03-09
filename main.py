@@ -16,9 +16,8 @@ from Auth.Auth import get_current_user_web_socket
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from firebase import invia_push
-# AGGIUNGERE ALLA TABELLA FINE RIPETIZIONE E LOGICA IN CONTROLLA TODO
-#TODO MODIFICARE  FUNC PER  RIPETIZIONE
-# CREA TABELLE
+
+
 #todo se il server si spegne o ha un ionterruzzione deve ricalcolare tutte le date dei task
 
 Base.metadata.create_all(bind=engine)
@@ -47,32 +46,34 @@ async def test(task: Task):
     
     task.task_datetime_repeat = task.task_datetime_repeat + timedelta(minutes=2)
     # todo da provare
-    await manager.send_to_user(task.user_id,{"task_id": task.id_task , "date_time_repeat": task.task_datetime_repeat.isoformat()})
-    task.isTaskChanged = True
+    #await manager.send_occurrency_update_to_user(task.user_id,{"task_id": task.id_task , "type": "occorrenze","date_time_repeat": task.task_datetime_repeat.isoformat()})
+    
  
 
-def set_for_next_repeat_days(task: Task):
+async def set_for_next_repeat_days(task: Task):
    
     task.task_datetime_repeat = task.task_datetime_repeat + timedelta(days=task.every)
 
-def set_for_next_repeat_weeks(task: Task):
+async def set_for_next_repeat_weeks(task: Task):
     task.task_datetime_repeat = task.task_datetime_repeat + timedelta(weeks=task.every)
 
-def set_for_next_repeat_months(task: Task):
+async def set_for_next_repeat_months(task: Task):
     task.task_datetime_repeat = task.task_datetime_repeat + relativedelta(months=task.every)
 
 
-def set_for_next_repeat_years(task: Task):
+async def set_for_next_repeat_years(task: Task):
     task.task_datetime_repeat = task.task_datetime_repeat + relativedelta(years=task.every)
 
-def check_recurrency_end_task(task: Task) -> bool:
+async def check_recurrency_end_task(task: Task) -> bool:
     print(f"---------------------------- >ricorrenza {task.end_recurrency_time }")
     if task.end_recurrency_time != None:
         task.end_recurrency_time -=1
+        await manager.send_occurrency_update_to_user(task.user_id,{"task_id": task.id_task ,"type": "occurrency", "date_time_repeat": task.task_datetime_repeat.isoformat(), "end_recurrency_time": task.end_recurrency_time})
         if task.end_recurrency_time == 0:
             return True
     #   print(f"check_recurrency_end_task; {task.end_recurrency_time}")
-        else: return False
+        else: 
+            return False
 
 
     if task.dateTime_task_end != None:
@@ -103,37 +104,40 @@ async def controlla_todo() :
                     await test(todo)
                     #set_for_next_repeat_days(todo)
                    # print(f"CHECK {check_recurrency_end_task(todo)}");
-                    if check_recurrency_end_task(todo):
+                    if await check_recurrency_end_task(todo):
                         print("\n\nCOMPLETATO == TRUE!!!!!!\n\n")
                         todo.completato = True
+                        await manager.send_complete_task_to_user(todo.user_id,{"task_id":todo.id_task, "type": "complete_task", "completato": todo.completato})
       
                 if todo.option == "Settimane":
                     print(f"Ripetizione ogni {todo.every} Settimane")
                     set_for_next_repeat_weeks(todo)
-                    if check_recurrency_end_task(todo):
+                    if await check_recurrency_end_task(todo):
                         todo.completato = True
                     
                 if todo.option == "Mesi":
                         print(f"Ripetizione ogni {todo.every} Mesi")
                         set_for_next_repeat_months(todo)
-                        if check_recurrency_end_task(todo):
+                        if await check_recurrency_end_task(todo):
                             todo.completato = True
 
                 if todo.option == "Anni":
                         print(f"Ripetizione ogni {todo.every} Anni")  
                         set_for_next_repeat_years(todo)   
-                        if check_recurrency_end_task(todo):
+                        if await check_recurrency_end_task(todo):
                             todo.completato = True 
-                    
+            else:
+                todo.completato = True      
 
               #  tokens = [ t.fcm_token for t in user_token ]
               #  invia_push(tokens,todo.titolo,todo.descrizione)
             if todo.completato:
+               await manager.send_complete_task_to_user(todo.user_id,{"task_id":todo.id_task, "type": "complete_task", "completato": todo.completato})
                print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
 
-            if not todo.isRepeating:
-                todo.completato = True
-                print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
+           # if not todo.isRepeating:
+            #    todo.completato = True
+             #   print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
 
           #  if not todo.isRepeating:
            #     todo.completato = True
@@ -174,7 +178,8 @@ async def controlla_todo() :
                          print(f"Ripetizione ogni {task_all.every} Mesi")
                     if task_all.option == "Anni":
                          print(f"Ripetizione ogni {task_all.every} Anni") 
-                    
+            else:
+                print(f"\n----> Titolo: {task_all.titolo}{task_all.descrizione} data fine {task_all.dateTime_task_end} \n")         
             if(task_all.end_recurrency_time != None):
              print(f"\n---->{task_all.task_datetime_repeat} per l'id utente {task_all.user_id} Titolo: {task_all.titolo}{task_all.descrizione}  ogni {task_all.every} minuti\nnumero ricorrenze {task_all.end_recurrency_time}\ndata fine {task_all.dateTime_task_end} \n")
         db.commit()
