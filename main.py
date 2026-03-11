@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 import firebase
 from Service.Socket import SocketManage
@@ -95,6 +96,8 @@ async def controlla_todo() :
    
     for task_all in db_future:
         print(f"{(task_all.task_datetime_repeat - now).total_seconds()} \n");
+
+    # await asyncio.sleep(seconds) -- attende seconds asincrono
              
     if db_results:
 
