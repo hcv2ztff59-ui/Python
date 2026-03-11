@@ -91,8 +91,10 @@ async def controlla_todo() :
     # todo gestire le ripetizioni per fine data e occorrenze VERIFUCARE PERCHE QUANDO OCCORRENZA A ZERO FA UN CICLO IN PIU
     db_results = db.query(Task).filter(Task.task_datetime_repeat <= now, Task.completato == False).all()
     print(f"Lista:\n")
-    for task_all in db_results:
-        print(f"{task_all.id_task}\n");
+    db_future = db.query(Task).filter(Task.task_datetime_repeat > now, Task.completato == False).all()
+   
+    for task_all in db_future:
+        print(f"{(task_all.task_datetime_repeat - now).total_seconds()} \n");
              
     if db_results:
 
