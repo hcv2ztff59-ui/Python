@@ -42,12 +42,9 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 async def test(task: Task):
-   
-    
+
     task.task_datetime_repeat = task.task_datetime_repeat + timedelta(minutes=2)
-    # todo da provare
-    #await manager.send_occurrency_update_to_user(task.user_id,{"task_id": task.id_task , "type": "occorrenze","date_time_repeat": task.task_datetime_repeat.isoformat()})
-    
+   
  
 
 async def set_for_next_repeat_days(task: Task):
@@ -93,6 +90,10 @@ async def controlla_todo() :
 
     # todo gestire le ripetizioni per fine data e occorrenze VERIFUCARE PERCHE QUANDO OCCORRENZA A ZERO FA UN CICLO IN PIU
     db_results = db.query(Task).filter(Task.task_datetime_repeat <= now, Task.completato == False).all()
+    print(f"Lista:\n")
+    for task_all in db_results:
+        print(f"{task_all.id_task}\n");
+             
     if db_results:
 
         for todo in db_results:
