@@ -45,6 +45,10 @@ class Task(Base):
         DateTime(timezone=True),
         nullable=True
     )
+    datetime_task_last_update: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    ) 
 
 
 class NotificationToken(Base):
