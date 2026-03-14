@@ -1,7 +1,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 import firebase
-from Service.Socket import SocketManage
+from Service.Socket import SocketManage, manager
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -23,7 +23,7 @@ from firebase import invia_push
 
 Base.metadata.create_all(bind=engine)
 
-manager = SocketManage()
+#manager = SocketManage()
 
 
 

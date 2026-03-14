@@ -26,9 +26,18 @@ class SocketManage:
             for connection in self.active_connections[user_id]:
                 await connection.send_json({"task_id":message["task_id"], "type": "complete_task", "completato":message["completato"]})
                
+    async def send_update_task_to_user(self, user_id: int, message):
+        print("WS send:", user_id, message)
+        if user_id in self.active_connections:
+            for connection in self.active_connections[user_id]:
+                await connection.send_json({"task_id":message["task_id"], "type": "updated_task"})
+               
 
     async def send_occurrency_update_to_user(self, user_id: int, message):
         print("WS send:", user_id, message)
         if user_id in self.active_connections:
             for connection in self.active_connections[user_id]:
                     await connection.send_json({"task_id":message["task_id"],"type": "occurrency","date_time_repeat": message["date_time_repeat"], "end_recurrency_time":message["end_recurrency_time"]})
+
+
+manager = SocketManage()

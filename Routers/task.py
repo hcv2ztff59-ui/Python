@@ -1,7 +1,7 @@
 from typing import List
 from datetime import timedelta,datetime
 from dateutil.relativedelta import relativedelta
-
+from Service.Socket import SocketManage, manager
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette import status
@@ -85,12 +85,6 @@ def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_u
     print(f"accesso effettuato come {current_user['email']}")
     return db.query(Task).filter(Task.user_id == current_user['id_utente']).all()
 
-# todo il problema che cercando solo task non completati e con modifica non mi restituisce quando il task e completato e il client non aggiorna da solo
-@router.get("/filtered_task", response_model = List[GetTask])
-def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
-    print(f"accesso effettuato come {current_user['email']}")
-    return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.isTaskChanged == True).all()
-
 @router.get("/visualizza_task", response_model = List[GetTask])
 def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
     print(f"accesso effettuato come {current_user['email']}")
@@ -108,14 +102,14 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
 
     print(f"accesso effettuato come {current_user['email']}")
     task_db = db.query(Task).filter(Task.id_task == id_task,Task.user_id == current_user['id_utente']).first()
+    task_update.datetime_task_last_update = datetime.now()
     update_data = task_update.model_dump(exclude_unset=True)
-
+    
     for key, value in update_data.items():
         print(f"${key} - ${value}\n")
 
     update_data.pop("id_task", None)
     update_data.pop("user_id", None)
-    
     
     for key, value in update_data.items():
         setattr(task_db, key, value)
@@ -123,6 +117,9 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
     db.commit()
     db.refresh(task_db)
 
+    await manager.send_update_task_to_user(current_user['id_utente'],{"task_id": task_db.id_task ,"type": "updated_task"})
+   
+    
     return {"msg":"Valori Aggiornati"}
 
 
