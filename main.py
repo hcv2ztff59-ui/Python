@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
 
 async def test(task: Task):
 
-    task.task_datetime_repeat = task.task_datetime_repeat + timedelta(minutes=2)
+    task.task_datetime_repeat = task.task_datetime_repeat + timedelta(minutes=1)
    
  
 
