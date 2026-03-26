@@ -1,7 +1,7 @@
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr
-from datetime import datetime
+from pydantic import BaseModel, ConfigDict, EmailStr,field_serializer
+from datetime import datetime, timezone
 
 from Models.models import Task,User
 
@@ -64,6 +64,12 @@ class GetTask(BaseModel):
     end_recurrency_time : Optional[int] = None
     dateTime_task_end : Optional[datetime] = None
     datetime_task_last_update: Optional[datetime] = None
+
+    @field_serializer("*", when_used="json")
+    def serialize_datetime(self, value):
+        if isinstance(value, datetime):
+            return value.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+        return value
    
 
 

@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 async def test(task: Task):
-
+    #era 2 minuti
     task.task_datetime_repeat = task.task_datetime_repeat + timedelta(minutes=1)
    
  
@@ -66,7 +66,12 @@ async def check_recurrency_end_task(task: Task) -> bool:
     print(f"---------------------------- >ricorrenza {task.end_recurrency_time }")
     if task.end_recurrency_time != None:
         task.end_recurrency_time -=1
-        await manager.send_occurrency_update_to_user(task.user_id,{"task_id": task.id_task ,"type": "occurrency", "date_time_repeat": task.task_datetime_repeat.isoformat(), "end_recurrency_time": task.end_recurrency_time})
+        await manager.send_occurrency_update_to_user(task.user_id,{
+                            "task_id": task.id_task,
+                            "type": "occurrency",
+                            "date_time_repeat": task.task_datetime_repeat,
+                            "end_recurrency_time": task.end_recurrency_time})    
+        
         if task.end_recurrency_time == 0:
             return True
     #   print(f"check_recurrency_end_task; {task.end_recurrency_time}")

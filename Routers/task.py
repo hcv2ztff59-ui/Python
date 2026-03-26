@@ -5,7 +5,8 @@ from Service.Socket import SocketManage, manager
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette import status
-
+from datetime import datetime, timezone
+from typing import Optional
 from Models.models import NotificationToken
 from Routers.user import get_current_user
 from Schemas.schemas import Task, CreaTask, TokenRequest, UpdateTask, GetTask
@@ -48,6 +49,13 @@ def create_token(data: TokenRequest,db: Session = Depends(get_db), current_user 
 def ping():
     return {"ok":1}
 
+def to_utc(dt: Optional[datetime]):
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
 @router.post("/crea_task", response_model = CreaTask)
 def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_current_user)):
     print(" CREA TASK CHIAMATA")
@@ -60,15 +68,15 @@ def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_c
         # L'orario di creazione del task lo faccio generare a lui
         db_task = Task(titolo = task.titolo, 
                        descrizione = task.descrizione, 
-                       creation_task_datetime = task.creation_task_datetime , 
-                       task_datetime_repeat = task.task_datetime_repeat , 
+                       creation_task_datetime = to_utc(task.creation_task_datetime ), 
+                       task_datetime_repeat = to_utc(task.task_datetime_repeat) , 
                        completato = task.completato,
                        user_id = current_user['id_utente'],
                        isRepeating = task.isRepeating, 
                        every = task.every, 
                        option = task.option,
                        end_recurrency_time = task.end_recurrency_time,
-                       dateTime_task_end = task.dateTime_task_end
+                       dateTime_task_end = to_utc(task.dateTime_task_end)
                        )
        
         db.add(db_task)
@@ -78,7 +86,7 @@ def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_c
         db.rollback()
         print(f"errore {e}")
 
-    return task
+    return db_task
 
 @router.get("/tutti_task", response_model = List[GetTask])
 def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
@@ -102,7 +110,11 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
 
     print(f"accesso effettuato come {current_user['email']}")
     task_db = db.query(Task).filter(Task.id_task == id_task,Task.user_id == current_user['id_utente']).first()
-    task_update.datetime_task_last_update = datetime.now()
+    task_update.datetime_task_last_update = datetime.now(timezone.utc)
+
+    print(f"aggiornamento ore utc {datetime.now(timezone.utc)}")
+    print(f"aggiornamento ore {datetime.now()}")
+
     update_data = task_update.model_dump(exclude_unset=True)
     
     for key, value in update_data.items():
@@ -112,6 +124,8 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
     update_data.pop("user_id", None)
     
     for key, value in update_data.items():
+        if isinstance(value, datetime):
+            value = to_utc(value)
         setattr(task_db, key, value)
 
     db.commit()
@@ -139,8 +153,9 @@ async def update_change_notify(id_task:int,task_update: UpdateTask, db = Depends
     
     
     for key, value in update_data.items():
+        if isinstance(value, datetime):
+            value = to_utc(value)
         setattr(task_db, key, value)
-
     db.commit()
     db.refresh(task_db)
 

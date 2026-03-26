@@ -1,5 +1,5 @@
 
-
+from datetime import timezone, datetime
 #TODO GESTIRE ECCEZZIONI SOCKET
 
 class SocketManage:
@@ -20,6 +20,7 @@ class SocketManage:
         if len(self.active_connections[user_id]) == 0:
             del self.active_connections[user_id]
 
+ 
     async def send_complete_task_to_user(self, user_id: int, message):
         print("WS send:", user_id, message)
         if user_id in self.active_connections:
@@ -37,7 +38,23 @@ class SocketManage:
         print("WS send:", user_id, message)
         if user_id in self.active_connections:
             for connection in self.active_connections[user_id]:
-                    await connection.send_json({"task_id":message["task_id"],"type": "occurrency","date_time_repeat": message["date_time_repeat"], "end_recurrency_time":message["end_recurrency_time"]})
+                    await connection.send_json({"task_id":message["task_id"],"type": "occurrency","date_time_repeat": format_utc(message["date_time_repeat"]), "end_recurrency_time":message["end_recurrency_time"]})
 
 
 manager = SocketManage()
+
+def format_utc(dt):
+    if dt is None:
+        return None
+
+    # 👉 se è stringa → parse
+    if isinstance(dt, str):
+        dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+
+    # 👉 se non ha timezone → aggiungila
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    else:
+        dt = dt.astimezone(timezone.utc)
+
+    return dt.isoformat().replace("+00:00", "Z")
