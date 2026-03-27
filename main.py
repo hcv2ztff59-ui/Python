@@ -94,7 +94,7 @@ async def controlla_todo() :
    
 
 
-    # todo gestire le ripetizioni per fine data e occorrenze VERIFUCARE PERCHE QUANDO OCCORRENZA A ZERO FA UN CICLO IN PIU
+    # TODO CHECK RICORRENZE PERCHE NE PRENDE PIU DI UNA E ANCHE A DATA SBAGLIATA
     db_results = db.query(Task).filter(Task.task_datetime_repeat <= now, Task.completato == False).all()
     print(f"Lista:\n")
     db_future = db.query(Task).filter(Task.task_datetime_repeat > now, Task.completato == False).all()
