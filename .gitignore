@@ -4,3 +4,22 @@ __pycache__/
 *.pyc
 .python-version
 .vscode/
+# Python
+__pycache__/
+*.pyc
+
+# Env
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# DB
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets
+serviceAccountKey.json
+.env
