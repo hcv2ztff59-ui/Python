@@ -84,6 +84,18 @@ async def check_recurrency_end_task(task: Task) -> bool:
             return True
     return False
 
+# no async perchè se è terminato lo devo sapere subito
+def isEndTask(todo: Task, now: datetime):
+    #ottengo ad esempio 7(minuti)
+    end = todo.every * todo.end_recurrency_time
+    #sommo i 7 minuti alla data attuale
+    #actual recurrency = 2026-03-28 15:11:16.118475+00:00(data end) 2026-03-28 15:03:16.115817+00:00
+    end_task = datetime.now(timezone.utc) + timedelta(minutes = end)
+    print(f"actual recurrency = {end_task} {now}")
+    if now  > end_task :
+        print("Task Scaduto")
+        todo.completato = True
+    #mettere calcolo riccorrenze rimanenti in caso di caduta server 
 
 async def check_task(todo,now):
         max_iter = 100  # safety
@@ -156,9 +168,12 @@ async def controlla_todo() :
         # TODO CHECK RICORRENZE PERCHE NE PRENDE PIU DI UNA E ANCHE A DATA SBAGLIATA
         #db_results = db.query(Task).filter(Task.task_datetime_repeat <= now, Task.completato == False).all()
         #print(f"Lista:\n")
+        db_past = db.query(Task).filter(Task.task_datetime_repeat < now, Task.completato == False).order_by(asc(Task.task_datetime_repeat)).all()
+
         db_future = db.query(Task).filter(Task.task_datetime_repeat <= now, Task.completato == False).order_by(asc(Task.task_datetime_repeat)).all()
     
         for task_all in db_future:
+            isEndTask(task_all,now)
             await check_task(task_all,now)        
         
         db.commit()
@@ -287,10 +302,19 @@ async def socket_endpoint(websocket: WebSocket):
     try:
         while True:
             # serve solo per mantenere viva la connessione
-            await websocket.receive_text()
-
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=30)
+            except asyncio.TimeoutError:
+            # nessun messaggio → ok, continua
+                pass
     except WebSocketDisconnect:
+        print("🔴 disconnesso", user_id)
         manager.disconnect(user_id, websocket)
+
+    except Exception as e:
+        print("🔴 errore ws:", e)
+        manager.disconnect(user_id, websocket)
+   
 
 
 @app.get("/")

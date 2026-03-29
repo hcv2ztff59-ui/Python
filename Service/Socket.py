@@ -24,22 +24,50 @@ class SocketManage:
     async def send_complete_task_to_user(self, user_id: int, message):
         print("WS send:", user_id, message)
         if user_id in self.active_connections:
-            for connection in self.active_connections[user_id]:
-                await connection.send_json({"task_id":message["task_id"], "type": "complete_task", "completato":message["completato"]})
+            dead_connections = []
+            for connection in list(self.active_connections[user_id]):
+                try:
+                    await connection.send_json({
+                        "task_id": message["task_id"],
+                        "type": "complete_task",
+                        "completato": message["completato"]
+                    })
+                except Exception as e:
+                    print("🔴 socket morto:", e)
+                    dead_connections.append(connection)
+            for conn in dead_connections:
+                self.disconnect(user_id, conn)
                
     async def send_update_task_to_user(self, user_id: int, message):
         print("WS send:", user_id, message)
         if user_id in self.active_connections:
-            for connection in self.active_connections[user_id]:
-                await connection.send_json({"task_id":message["task_id"], "type": "updated_task"})
+            dead_connections = []
+            for connection in list(self.active_connections[user_id]):
+                try:
+                    await connection.send_json({
+                        "task_id": message["task_id"],
+                        "type": "updated_task"
+                    })
+                except Exception as e:
+                    print("🔴 socket morto:", e)
+                    dead_connections.append(connection)
+        
+            for conn in dead_connections:
+                self.disconnect(user_id, conn)
                
 
     async def send_occurrency_update_to_user(self, user_id: int, message):
         print("WS send:", user_id, message)
         if user_id in self.active_connections:
-            for connection in self.active_connections[user_id]:
+            dead_connections = []
+            for connection in list(self.active_connections[user_id]):
+                try:
                     await connection.send_json({"task_id":message["task_id"],"type": "occurrency","date_time_repeat": format_utc(message["date_time_repeat"]), "end_recurrency_time":message["end_recurrency_time"]})
-
+                except Exception as e:
+                    print("🔴 socket morto:", e)
+                    dead_connections.append(connection)
+            for conn in dead_connections:
+                self.disconnect(user_id, conn)
 
 manager = SocketManage()
 

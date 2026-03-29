@@ -89,6 +89,7 @@ class UpdateTask(BaseModel):
     end_recurrency_time : Optional[int] = None
     dateTime_task_end : Optional[datetime] = None
     datetime_task_last_update:  Optional[datetime] = None 
+    isToUpdate : Optional[bool] = None
 
     class Config:
         from_attributes = True
