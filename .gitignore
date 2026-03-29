@@ -1,25 +1,59 @@
-database.db
-.venv/
+# =========================
+# 🔥 PYTHON / FASTAPI
+# =========================
 __pycache__/
 *.pyc
-.python-version
-.vscode/
-# Python
-__pycache__/
-*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+*.db
 
-# Env
+# Virtual environment
 .venv/
 venv/
+env/
 
-# OS
-.DS_Store
+# Environment variables (SEMPRE esclusi)
+.env
+.env.*
 
-# DB
+# Build / dist
+dist/
+build/
+*.egg-info/
+
+# Uvicorn / runtime
+*.pid
+
+# =========================
+# 🔥 DATABASE
+# =========================
 *.db
-*.db-shm
-*.db-wal
+*.sqlite3
 
-# Secrets
+# =========================
+# 🔥 FIREBASE / SECRET
+# =========================
+firebase-adminsdk.json
+*.pem
+*.key
+
+# =========================
+# 🔥 IDE / SISTEMA
+# =========================
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+
+# =========================
+# 🔥 FILE TEMP
+# =========================
+*.tmp
+*.bak
+*.cache
+
 serviceAccountKey.json
-.envmy-fastapi-app/
+firebase-adminsdk.json
