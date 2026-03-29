@@ -19,7 +19,7 @@ from sqlalchemy import desc,asc
 
 from firebase import invia_push
 
-#vediamo
+
 #todo se il server si spegne o ha un ionterruzzione deve ricalcolare tutte le date dei task
 
 Base.metadata.create_all(bind=engine)
