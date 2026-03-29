@@ -104,7 +104,7 @@ def task_completati( db = Depends(get_db), current_user = Depends(get_current_us
     return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.completato == True).all()
 
 
-# todo provare la modifica del singolo task se aggiorna datetime_task_last_update durante lo scarico degli aggiornamenti
+# todo provare per la modifica del singolo task se aggiorna datetime_task_last_update durante lo scarico degli aggiornamenti
 @router.patch("/modifica_task")
 async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db), current_user = Depends(get_current_user)):
 
