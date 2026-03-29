@@ -104,14 +104,17 @@ def task_completati( db = Depends(get_db), current_user = Depends(get_current_us
     return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.completato == True).all()
 
 
-# todo aggiornare per data ripetizione
+# todo provare la modifica del singolo task se aggiorna datetime_task_last_update durante lo scarico degli aggiornamenti
 @router.patch("/modifica_task")
 async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db), current_user = Depends(get_current_user)):
 
     print(f"accesso effettuato come {current_user['email']}")
     task_db = db.query(Task).filter(Task.id_task == id_task,Task.user_id == current_user['id_utente']).first()
-    task_update.datetime_task_last_update = datetime.now(timezone.utc)
-
+    if task_update.isToUpdate:
+        print("isToUpdate è vero, aggiorno data modifica")
+        task_update.datetime_task_last_update = datetime.now(timezone.utc)
+    else:
+        print("isToUpdate è false, non aggiorno data modifica")
     print(f"aggiornamento ore utc {datetime.now(timezone.utc)}")
     print(f"aggiornamento ore {datetime.now()}")
 
