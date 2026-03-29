@@ -22,4 +22,4 @@ venv/
 
 # Secrets
 serviceAccountKey.json
-.env
+.envmy-fastapi-app/
