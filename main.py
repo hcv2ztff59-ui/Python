@@ -85,7 +85,7 @@ async def check_recurrency_end_task(task: Task) -> bool:
     return False
 
 # no async perchè se è terminato lo devo sapere subito
-def isEndTask(todo: Task, now: datetime):
+def isEndTask(todo: Task, now: datetime) -> bool:
     #ottengo ad esempio 7(minuti)
     end = todo.every * todo.end_recurrency_time
     #sommo i 7 minuti alla data attuale
@@ -93,8 +93,10 @@ def isEndTask(todo: Task, now: datetime):
     end_task = datetime.now(timezone.utc) + timedelta(minutes = end)
     print(f"actual recurrency = {end_task} {now}")
     if now  > end_task :
-        print("Task Scaduto")
+        print("Task Scaduto - Lo salto e lo segno come completato")
         todo.completato = True
+        return True
+    return False
     #mettere calcolo riccorrenze rimanenti in caso di caduta server 
 
 async def check_task(todo,now):
@@ -173,7 +175,10 @@ async def controlla_todo() :
         db_future = db.query(Task).filter(Task.task_datetime_repeat <= now, Task.completato == False).order_by(asc(Task.task_datetime_repeat)).all()
     
         for task_all in db_future:
-            isEndTask(task_all,now)
+            # Se è scaduto il task, lo segno come completato e passo al prossimo
+            # todo spostare questo controllo quando parte il server
+            if isEndTask(task_all,now):
+                continue
             await check_task(task_all,now)        
         
         db.commit()
