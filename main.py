@@ -39,7 +39,9 @@ scheduler = AsyncIOScheduler()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    scheduler.start()
+    if not scheduler.running:
+        scheduler.add_job(controlla_todo, "interval", seconds=30)
+        scheduler.start()
     yield
     scheduler.shutdown()
 
@@ -90,7 +92,7 @@ def isEndTask(todo: Task, now: datetime) -> bool:
     end = todo.every * todo.end_recurrency_time
     #sommo i 7 minuti alla data attuale
     #actual recurrency = 2026-03-28 15:11:16.118475+00:00(data end) 2026-03-28 15:03:16.115817+00:00
-    end_task = datetime.now(timezone.utc) + timedelta(minutes = end)
+    end_task = todo.task_datetime_repeat + timedelta(minutes = end)
     print(f"actual recurrency = {end_task} {now}")
     if now  > end_task :
         print("Task Scaduto - Lo salto e lo segno come completato")
@@ -99,48 +101,51 @@ def isEndTask(todo: Task, now: datetime) -> bool:
     return False
     #mettere calcolo riccorrenze rimanenti in caso di caduta server 
 
+
+def to_utc(dt):
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)  # ok se sai che è UTC
+    return dt.astimezone(timezone.utc)
+
 async def check_task(todo,now):
-        max_iter = 100  # safety
+        safety_iter = 100
         task_date = todo.task_datetime_repeat
 
-        if task_date.tzinfo is None:
-            task_date = task_date.replace(tzinfo=timezone.utc)
-      #user_token = db.query(NotificationToken).filter(NotificationToken.id_user_ref == todo.user_id).all()
+       # if task_date.tzinfo is None:
+        #    task_date = task_date.replace(tzinfo=timezone.utc)
+        #user_token = db.query(NotificationToken).filter(NotificationToken.id_user_ref == todo.user_id).all()
            # if user_token:
         if todo.isRepeating == True:
-            if task_date <= now and max_iter > 0:
-                max_iter -= 1
+         
+            while task_date <= now and safety_iter > 0:
+                safety_iter -= 1
+                print("Task Scaduto - Lo aggiorno per la prossima occorrenza")
                 if todo.option == "Giorni":
                     print(f"E una Ripetizione ogni {todo.every}\n")
                     await test(todo)
                     #set_for_next_repeat_days(todo)
-                    # print(f"CHECK {check_recurrency_end_task(todo)}");
-                    if await check_recurrency_end_task(todo):
-                        print("\n\nCOMPLETATO == TRUE!!!!!!\n\n")
-                        todo.completato = True
-                        
-               #         await manager.send_complete_task_to_user(todo.user_id,{"task_id":todo.id_task, "type": "complete_task", "completato": todo.completato})
-                    else:
-                        print("Ricorrenza scalata\n")
-                if todo.option == "Settimane":
+
+                elif todo.option == "Settimane":
                     print(f"Ripetizione ogni {todo.every} Settimane")
                     await set_for_next_repeat_weeks(todo)
-                    if await check_recurrency_end_task(todo):
-                        todo.completato = True
-                        
-                    
-                if todo.option == "Mesi":
+                               
+                elif todo.option == "Mesi":
                     print(f"Ripetizione ogni {todo.every} Mesi")
                     await set_for_next_repeat_months(todo)
-                    if await check_recurrency_end_task(todo):
-                        todo.completato = True
-                        
-
-                if todo.option == "Anni":
+          
+                elif todo.option == "Anni":
                     print(f"Ripetizione ogni {todo.every} Anni")  
                     await set_for_next_repeat_years(todo)   
-                    if await check_recurrency_end_task(todo):
-                        todo.completato = True 
+     
+                if await check_recurrency_end_task(todo):
+                    print("\n\nCOMPLETATO == TRUE!!!!!!\n\n")
+                    todo.completato = True
+                    break
+                else:
+                    print(f"Task {todo.titolo} notifica , nuova data di ripetizione {todo.task_datetime_repeat}")
+                #assegno prossima data di ripetizione se in ritardo
+                task_date = todo.task_datetime_repeat
+                print(f"Task {todo.id_task} è scaduto, nuova data di ripetizione {task_date}")
                         
         else:
             todo.completato = True      
@@ -151,30 +156,19 @@ async def check_task(todo,now):
             await manager.send_complete_task_to_user(todo.user_id,{"task_id":todo.id_task, "type": "complete_task", "completato": todo.completato})
             print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
 
-        # if not todo.isRepeating:
-        #    todo.completato = True
-            #   print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
-
-        #  if not todo.isRepeating:
-        #     todo.completato = True
-        #    print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
-            #manda push notifiction a todo.user_id
-        
+     
 
 async def controlla_todo() :
     db = SessionLocal()
 
-    now = datetime.now(timezone.utc)
-   
+    #now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     try:
         # TODO CHECK RICORRENZE PERCHE NE PRENDE PIU DI UNA E ANCHE A DATA SBAGLIATA
-        #db_results = db.query(Task).filter(Task.task_datetime_repeat <= now, Task.completato == False).all()
-        #print(f"Lista:\n")
-        db_past = db.query(Task).filter(Task.task_datetime_repeat < now, Task.completato == False).order_by(asc(Task.task_datetime_repeat)).all()
-
-        db_future = db.query(Task).filter(Task.task_datetime_repeat <= now, Task.completato == False).order_by(asc(Task.task_datetime_repeat)).all()
+     
+        task_incoming = db.query(Task).filter(Task.task_datetime_repeat <= now, Task.completato == False).order_by(asc(Task.task_datetime_repeat)).all()
     
-        for task_all in db_future:
+        for task_all in task_incoming:
             # Se è scaduto il task, lo segno come completato e passo al prossimo
             # todo spostare questo controllo quando parte il server
             if isEndTask(task_all,now):
@@ -185,103 +179,9 @@ async def controlla_todo() :
     finally:
         db.close()
     
-'''
-   
-    if db_results:
-
-        for todo in db_results:
-            #user_token = db.query(NotificationToken).filter(NotificationToken.id_user_ref == todo.user_id).all()
-           # if user_token:
-            if todo.isRepeating == True:
-                if todo.option == "Giorni":
-                    print(f"E una Ripetizione ogni {todo.every}\n")
-                    await test(todo)
-                    #set_for_next_repeat_days(todo)
-                   # print(f"CHECK {check_recurrency_end_task(todo)}");
-                    if await check_recurrency_end_task(todo):
-                        print("\n\nCOMPLETATO == TRUE!!!!!!\n\n")
-                        todo.completato = True
-                        await manager.send_complete_task_to_user(todo.user_id,{"task_id":todo.id_task, "type": "complete_task", "completato": todo.completato})
-                    else:
-                        print("Ricorrenza scalata\n")
-                if todo.option == "Settimane":
-                    print(f"Ripetizione ogni {todo.every} Settimane")
-                    set_for_next_repeat_weeks(todo)
-                    if await check_recurrency_end_task(todo):
-                        todo.completato = True
-                    
-                if todo.option == "Mesi":
-                        print(f"Ripetizione ogni {todo.every} Mesi")
-                        set_for_next_repeat_months(todo)
-                        if await check_recurrency_end_task(todo):
-                            todo.completato = True
-
-                if todo.option == "Anni":
-                        print(f"Ripetizione ogni {todo.every} Anni")  
-                        set_for_next_repeat_years(todo)   
-                        if await check_recurrency_end_task(todo):
-                            todo.completato = True 
-            else:
-                todo.completato = True      
-
-              #  tokens = [ t.fcm_token for t in user_token ]
-              #  invia_push(tokens,todo.titolo,todo.descrizione)
-            if todo.completato:
-               await manager.send_complete_task_to_user(todo.user_id,{"task_id":todo.id_task, "type": "complete_task", "completato": todo.completato})
-               print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
-
-           # if not todo.isRepeating:
-            #    todo.completato = True
-             #   print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
-
-          #  if not todo.isRepeating:
-           #     todo.completato = True
-            #    print(f"il Task {todo.id_task} dell'utente {todo.user_id} è completato")
-                #manda push notifiction a todo.user_id
-        db.commit()
 
 
-        
 
-    print("******* STAMPA ********")
-    db_await_result = db.query(Task).filter(Task.task_datetime_repeat >= now, Task.completato == False).all()
-    if db_await_result:
-        print(f"Prossimi eventi:\n")
-        for task_all in db_await_result:
-             
-
-             #todo continuare qua deve calcolare il prossimo evento 
-            if task_all.isRepeating == True:
-                    if task_all.option == "Giorni":
-                        print(f"Ripetizione ogni {task_all.every} Giorni --- prossima ripetizione {task_all.task_datetime_repeat} ")  
-                        if task_all.end_recurrency_time != None:
-                            if task_all.end_recurrency_time == 0:
-                                print("\tFine Ripetizione - Task Completato :) ");
-                            else:
-                                print(f"\tMancano {task_all.end_recurrency_time} ricorrenze :) ");
-                        if task_all.dateTime_task_end != None:
-                            if task_all.dateTime_task_end != datetime.now():
-                                    print(f"\Data fine Evento {task_all.dateTime_task_end} :) ");
-                            else:
-                                print(f"\tFine Task  :) ");
-
-                     
-                    if task_all.option == "Settimane":
-                        print(f"Ripetizione ogni {task_all.every} Settimane")
-                        
-                    if task_all.option == "Mesi":
-                         print(f"Ripetizione ogni {task_all.every} Mesi")
-                    if task_all.option == "Anni":
-                         print(f"Ripetizione ogni {task_all.every} Anni") 
-            else:
-                print(f"\n----> Titolo: {task_all.titolo}{task_all.descrizione} data fine {task_all.dateTime_task_end} \n")         
-            if(task_all.end_recurrency_time != None):
-             print(f"\n---->{task_all.task_datetime_repeat} per l'id utente {task_all.user_id} Titolo: {task_all.titolo}{task_all.descrizione}  ogni {task_all.every} minuti\nnumero ricorrenze {task_all.end_recurrency_time}\ndata fine {task_all.dateTime_task_end} \n")
-        db.commit()
-    db.close()
-    print("***************")'''
-
-scheduler.add_job(controlla_todo, "interval", seconds=30)
 
 app = FastAPI(lifespan=lifespan)
 
@@ -324,7 +224,7 @@ async def socket_endpoint(websocket: WebSocket):
 
 @app.get("/")
 async def root():
-    await controlla_todo()
+   # await controlla_todo()
     return {"message": "Benvenuto!"}
 
 
@@ -335,6 +235,6 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
+        reload=False,
         log_level="info"
     )
