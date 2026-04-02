@@ -92,17 +92,18 @@ def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_c
 def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
     print(f"accesso effettuato come {current_user['email']}")
     return db.query(Task).filter(Task.user_id == current_user['id_utente']).all()
-
+'''
 @router.get("/visualizza_task", response_model = List[GetTask])
 def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
     print(f"accesso effettuato come {current_user['email']}")
     return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.completato == False).all()
-
+'''
+'''
 @router.get("/task_completati", response_model = List[GetTask])
 def task_completati( db = Depends(get_db), current_user = Depends(get_current_user)):
     print(f"accesso effettuato come {current_user['email']}")
     return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.completato == True).all()
-
+'''
 
 # todo provare per la modifica del singolo task se aggiorna datetime_task_last_update durante lo scarico degli aggiornamenti
 @router.patch("/modifica_task")
