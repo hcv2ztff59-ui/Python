@@ -10,6 +10,9 @@ class SocketManage:
     async def connect(self, user_id: int, websocket):
         await websocket.accept()
 
+        for conn in self.active_connections:
+            print(f"connessione attiva: {conn}")
+            
         if user_id not in self.active_connections:
           self.active_connections[user_id] = []
 

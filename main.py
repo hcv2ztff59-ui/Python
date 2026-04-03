@@ -204,14 +204,13 @@ async def socket_endpoint(websocket: WebSocket):
     
     await manager.connect(user_id, websocket)
 
+    print("🟢 CONNECT", user_id, websocket)
+
     try:
         while True:
             # serve solo per mantenere viva la connessione
-            try:
-                await asyncio.wait_for(websocket.receive_text(), timeout=30)
-            except asyncio.TimeoutError:
-            # nessun messaggio → ok, continua
-                pass
+            await asyncio.sleep(30)
+           
     except WebSocketDisconnect:
         print("🔴 disconnesso", user_id)
         manager.disconnect(user_id, websocket)
