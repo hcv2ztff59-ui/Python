@@ -205,6 +205,7 @@ async def socket_endpoint(websocket: WebSocket):
     await manager.connect(user_id, websocket)
 
     print("🟢 CONNECT", user_id, websocket)
+    print(f"Connessioni attive per {user_id}: {len(manager.active_connections.get(user_id, []))}")
 
     try:
         while True:

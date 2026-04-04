@@ -19,9 +19,16 @@ class SocketManage:
         self.active_connections[user_id].append(websocket)
 
     def disconnect(self, user_id: int, websocket):
-        self.active_connections[user_id].remove(websocket)
-        if len(self.active_connections[user_id]) == 0:
+        if user_id not in self.active_connections:
+            return
+
+        if websocket in self.active_connections[user_id]:
+            self.active_connections[user_id].remove(websocket)
+
+        if not self.active_connections[user_id]:
             del self.active_connections[user_id]
+        
+        print(f"Connessioni attive per {user_id}: {len(self.active_connections.get(user_id, []))}")
 
  
     async def send_complete_task_to_user(self, user_id: int, message):
@@ -43,20 +50,25 @@ class SocketManage:
                
     async def send_update_task_to_user(self, user_id: int, message):
         print("WS send:", user_id, message)
-        if user_id in self.active_connections:
-            dead_connections = []
-            for connection in list(self.active_connections[user_id]):
+
+        if user_id not in self.active_connections:
+            return
+
+        for connection in list(self.active_connections[user_id]):
+            try:
+                await connection.send_json({
+                    "task_id": message["task_id"],
+                    "type": "updated_task"
+                })
+            except Exception as e:
+                print("🔴 socket morto:", e)
+
                 try:
-                    await connection.send_json({
-                        "task_id": message["task_id"],
-                        "type": "updated_task"
-                    })
-                except Exception as e:
-                    print("🔴 socket morto:", e)
-                    dead_connections.append(connection)
-        
-            for conn in dead_connections:
-                self.disconnect(user_id, conn)
+                    await connection.close()
+                except:
+                    pass
+
+                self.disconnect(user_id, connection)
                
 
     async def send_occurrency_update_to_user(self, user_id: int, message):
