@@ -70,6 +70,49 @@ class SocketManage:
 
                 self.disconnect(user_id, connection)
                
+    async def send_new_task_to_user(self, user_id: int, message):
+        print("WS send:", user_id, message)
+
+        if user_id not in self.active_connections:
+            return
+
+        for connection in list(self.active_connections[user_id]):
+            try:
+                await connection.send_json({
+                    "task_id": message["task_id"],
+                    "type": "new_task"
+                })
+            except Exception as e:
+                print("🔴 socket morto:", e)
+
+                try:
+                    await connection.close()
+                except:
+                    pass
+
+                self.disconnect(user_id, connection)
+
+    async def send_deleted_task_to_user(self, user_id: int, message):
+        print("WS send:", user_id, message)
+
+        if user_id not in self.active_connections:
+            return
+
+        for connection in list(self.active_connections[user_id]):
+            try:
+                await connection.send_json({
+                    "task_id": message["task_id"],
+                    "type": "deleted_task"
+                })
+            except Exception as e:
+                print("🔴 socket morto:", e)
+
+                try:
+                    await connection.close()
+                except:
+                    pass
+
+                self.disconnect(user_id, connection)
 
     async def send_occurrency_update_to_user(self, user_id: int, message):
         print("WS send:", user_id, message)

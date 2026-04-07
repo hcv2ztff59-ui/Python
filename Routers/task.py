@@ -57,7 +57,7 @@ def to_utc(dt: Optional[datetime]):
     return dt.astimezone(timezone.utc)
 
 @router.post("/crea_task", response_model = CreaTask)
-def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_current_user)):
+async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_current_user)):
     print(" CREA TASK CHIAMATA")
     print(f"accesso effettuato come {current_user['email']}")
     print(f"id  {current_user['id_utente']}")
@@ -82,6 +82,7 @@ def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_c
         db.add(db_task)
         db.commit()
         db.refresh(db_task)
+        await manager.send_new_task_to_user(current_user['id_utente'],{"task_id": db_task.id_task ,"type": "new_task"})
     except Exception as e:
         db.rollback()
         print(f"errore {e}")
@@ -176,6 +177,8 @@ async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends
 
     db.delete(task_db)
     db.commit()
+
+    await manager.send_deleted_task_to_user(current_user['id_utente'],{"task_id": task_db.id_task ,"type": "deleted_task"})
 
     return {"msg":"Task eliminato"}
    
