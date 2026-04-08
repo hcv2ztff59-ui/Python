@@ -88,6 +88,9 @@ async def check_recurrency_end_task(task: Task) -> bool:
 
 # no async perchè se è terminato lo devo sapere subito
 def isEndTask(todo: Task, now: datetime) -> bool:
+
+    if todo.end_recurrency_time is None:
+        return False
     #ottengo ad esempio 7(minuti)
     end = todo.every * todo.end_recurrency_time
     #sommo i 7 minuti alla data attuale
@@ -210,7 +213,7 @@ async def socket_endpoint(websocket: WebSocket):
     try:
         while True:
             # serve solo per mantenere viva la connessione
-            await asyncio.sleep(30)
+            await websocket.receive_text()
            
     except WebSocketDisconnect:
         print("🔴 disconnesso", user_id)
