@@ -93,6 +93,13 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
 def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
     print(f"accesso effettuato come {current_user['email']}")
     return db.query(Task).filter(Task.user_id == current_user['id_utente']).all()
+
+
+@router.get("/tutti_task_filtered", response_model = List[GetTask])
+def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
+    print(f"accesso effettuato come {current_user['email']}")
+    return db.query(Task).filter(Task.user_id == current_user['id_utente']).filter(Task.completato == False).all()
+
 '''
 @router.get("/visualizza_task", response_model = List[GetTask])
 def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):

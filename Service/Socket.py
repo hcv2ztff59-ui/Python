@@ -1,6 +1,7 @@
 
 from datetime import timezone, datetime
 #TODO GESTIRE ECCEZZIONI SOCKET
+#TODO implementare ws send_occurrency_date_end_task_to_user 
 
 class SocketManage:
     def __init__(self):
