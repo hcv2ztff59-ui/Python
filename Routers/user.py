@@ -28,6 +28,7 @@ def login(user_in:Login, db: Session = Depends(get_db)):
     token = crea_token({"sub":user_in.email,"id":user.id})
     refresh_token = crea_refresh_token({"sub":user_in.email,"id":user.id})
     return {
+        "name": user.nome_utente,
         "access_token": token,
         "refresh_token": refresh_token,
         "token_type": "bearer"

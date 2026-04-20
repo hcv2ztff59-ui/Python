@@ -42,6 +42,7 @@ async def lifespan(app: FastAPI):
     if not scheduler.running:
         scheduler.add_job(controlla_todo, "interval", seconds=30)
         scheduler.start()
+    
     yield
     scheduler.shutdown()
 
@@ -241,3 +242,4 @@ if __name__ == "__main__":
         reload=False,
         log_level="info"
     )
+    
