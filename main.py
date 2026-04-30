@@ -96,8 +96,7 @@ def isEndTask(todo: Task, now: datetime) -> bool:
     end = todo.every * todo.end_recurrency_time
     #sommo i 7 minuti alla data attuale
     #actual recurrency = 2026-03-28 15:11:16.118475+00:00(data end) 2026-03-28 15:03:16.115817+00:00
-    end_task = todo.task_datetime_repeat + timedelta(days = end)
-    
+
     #todo gestire il calcolo in gg, settimane, mesi , anni
     end_task = todo.task_datetime_repeat + timedelta(days = end)
     print(f"actual recurrency = {end_task} {now}")
