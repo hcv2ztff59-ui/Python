@@ -22,29 +22,7 @@ def get_db():
     finally:
         db.close()
 
-'''
-@router.get("/test-push")
-def test_push():
 
-    token = "BIVxRaBeZAcD1fgB_cN9lxW9sS5OGVcj2rnChfbx299AItSJWB_Hwy96ZqPQJFinZRBgJ8xxYPFgYPYiFJRoIzw"
-
-    send_service(token,"title","ciao")
-
-    return {"status": "sent"}
-
-@router.post("/create-token")
-def create_token(data: TokenRequest,db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    exist = db.query(NotificationToken).filter( NotificationToken.token == data.token ).first()
-    if exist:
-        return {"status":"Token già registrato"}
-
-    newtoken = NotificationToken(token = data.token, id_user_ref = current_user['id_utente'])
-    db.add(newtoken)
-    db.commit()
-
-    return {"status":"Token creato"}
-
-'''
 @router.get("/ping")
 def ping():
     return {"ok":1}
@@ -82,7 +60,8 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
         db.add(db_task)
         db.commit()
         db.refresh(db_task)
-        await manager.send_new_task_to_user(current_user['id_utente'],{"task_id": db_task.id_task ,"type": "new_task"})
+        if manager.has_multiple_connections(current_user['id_utente']):
+            await manager.send_new_task_to_user(current_user['id_utente'],{"task_id": db_task.id_task ,"type": "new_task"})
     except Exception as e:
         db.rollback()
         print(f"errore {e}")
@@ -100,18 +79,6 @@ def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_u
     print(f"accesso effettuato come {current_user['email']}")
     return db.query(Task).filter(Task.user_id == current_user['id_utente']).all()
 
-'''
-@router.get("/visualizza_task", response_model = List[GetTask])
-def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
-    print(f"accesso effettuato come {current_user['email']}")
-    return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.completato == False).all()
-'''
-'''
-@router.get("/task_completati", response_model = List[GetTask])
-def task_completati( db = Depends(get_db), current_user = Depends(get_current_user)):
-    print(f"accesso effettuato come {current_user['email']}")
-    return db.query(Task).filter(Task.user_id == current_user['id_utente'], Task.completato == True).all()
-'''
 
 # todo provare per la modifica del singolo task se aggiorna datetime_task_last_update durante lo scarico degli aggiornamenti
 @router.patch("/modifica_task")
@@ -143,7 +110,8 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
     db.commit()
     db.refresh(task_db)
 
-    await manager.send_update_task_to_user(current_user['id_utente'],{"task_id": task_db.id_task ,"type": "updated_task"})
+    if manager.has_multiple_connections(current_user['id_utente']):
+        await manager.send_update_task_to_user(current_user['id_utente'],{"task_id": task_db.id_task ,"type": "updated_task"})
    
     
     return {"msg":"Valori Aggiornati"}
@@ -184,8 +152,8 @@ async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends
 
     db.delete(task_db)
     db.commit()
-
-    await manager.send_deleted_task_to_user(current_user['id_utente'],{"task_id": task_db.id_task ,"type": "deleted_task"})
+    if manager.has_multiple_connections(current_user['id_utente']):
+        await manager.send_deleted_task_to_user(current_user['id_utente'],{"task_id": task_db.id_task ,"type": "deleted_task"})
 
     return {"msg":"Task eliminato"}
    

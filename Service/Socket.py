@@ -31,12 +31,16 @@ class SocketManage:
         
         print(f"Connessioni attive per {user_id}: {len(self.active_connections.get(user_id, []))}")
 
- 
+    
+    def has_multiple_connections(self, user_id: int) -> bool:
+        return len(self.active_connections.get(user_id, [])) > 1
+
     async def send_complete_task_to_user(self, user_id: int, message):
         print("WS send:", user_id, message)
         if user_id in self.active_connections:
             dead_connections = []
             for connection in list(self.active_connections[user_id]):
+                
                 try:
                     await connection.send_json({
                         "task_id": message["task_id"],

@@ -34,9 +34,6 @@ def login(user_in:Login, db: Session = Depends(get_db)):
         "token_type": "bearer"
     }
 
-@router.post("/logout")
-def logout(user_in:Login, db: Session = Depends(get_db)):
-    pass
 
 @router.post("/refresh_token")
 def refresh_token(data: RefreshRequest):
@@ -74,6 +71,10 @@ async def register_token(
         raise HTTPException(status_code=400, detail="Errore durante il salvataggio del token")
 
     return {"message": "Token registrato con successo"}
+
+@router.post("/logout")
+def logout(user:Login, db: Session = Depends(get_db)):
+    pass
 
 @router.post("/register")
 def register(user:RegistraUtente, db: Session = Depends(get_db)):

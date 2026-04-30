@@ -96,7 +96,7 @@ def isEndTask(todo: Task, now: datetime) -> bool:
     end = todo.every * todo.end_recurrency_time
     #sommo i 7 minuti alla data attuale
     #actual recurrency = 2026-03-28 15:11:16.118475+00:00(data end) 2026-03-28 15:03:16.115817+00:00
-    end_task = todo.task_datetime_repeat + timedelta(minutes = end)
+    end_task = todo.task_datetime_repeat + timedelta(days = end)
     print(f"actual recurrency = {end_task} {now}")
     if now  > end_task :
         print("Task Scaduto - Lo salto e lo segno come completato")
@@ -126,8 +126,8 @@ async def check_task(todo,now):
                 print("Task Scaduto - Lo aggiorno per la prossima occorrenza")
                 if todo.option == "Giorni":
                     print(f"E una Ripetizione ogni {todo.every}\n")
-                    await test(todo)
-                    #set_for_next_repeat_days(todo)
+                    #await test(todo)
+                    set_for_next_repeat_days(todo)
 
                 elif todo.option == "Settimane":
                     print(f"Ripetizione ogni {todo.every} Settimane")
@@ -197,12 +197,17 @@ app.include_router(task)
 @app.websocket("/ws")
 async def socket_endpoint(websocket: WebSocket):
     
-    token = websocket.query_params.get("token")
-    user = get_current_user_web_socket(token)
-    
-    if user is None:
-        await websocket.close()
+    token = websocket.query_params.get("token")  or websocket.query_params.get("access_token")
+
+    if not token:
+
+        print("❌ TOKEN MANCANTE")
+
+        await websocket.close(code=1008)
+
         return
+    
+    user = get_current_user_web_socket(token)
 
     user_id = user["id_utente"]
     
