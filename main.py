@@ -83,7 +83,7 @@ async def check_recurrency_end_task(task: Task) -> bool:
 
 
     if task.dateTime_task_end != None:
-        if task.end_recurrency_time == datetime.now():
+        if task.dateTime_task_end == datetime.now():
             return True
     return False
 
