@@ -68,22 +68,24 @@ async def set_for_next_repeat_years(task: Task):
 
 async def check_recurrency_end_task(task: Task) -> bool:
     print(f"---------------------------- >ricorrenza {task.end_recurrency_time }")
+    #SE HO UN NUMERO DI RICORRENZE 
     if task.end_recurrency_time != None:
-        task.end_recurrency_time -=1
-        await manager.send_occurrency_update_to_user(task.user_id,{
-                            "task_id": task.id_task,
-                            "type": "occurrency",
-                            "date_time_repeat": task.task_datetime_repeat,
-                            "end_recurrency_time": task.end_recurrency_time})    
-        
-        if task.end_recurrency_time == 0:
-            return True
-        else: 
-            return False
+        if datetime.now() >= task.task_datetime_repeat:
+            task.end_recurrency_time -=1
+            await manager.send_occurrency_update_to_user(task.user_id,{
+                                "task_id": task.id_task,
+                                "type": "occurrency",
+                                "date_time_repeat": task.task_datetime_repeat,
+                                "end_recurrency_time": task.end_recurrency_time})    
+            
+            if task.end_recurrency_time == 0:
+                return True
+            else: 
+                return False
 
-
+    #SE HO UNA DATA DI FINE RICORRENZA
     if task.dateTime_task_end != None:
-        if task.dateTime_task_end == datetime.now():
+        if datetime.now() >=task.dateTime_task_end:
             return True
     return False
 

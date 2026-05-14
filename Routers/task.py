@@ -41,7 +41,7 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
     print(f"id  {current_user['id_utente']}")
     if not current_user['email'] or not current_user['id_utente']:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-
+    
     try:
         # L'orario di creazione del task lo faccio generare a lui
         db_task = Task(titolo = task.titolo, 

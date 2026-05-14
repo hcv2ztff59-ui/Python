@@ -86,7 +86,10 @@ def register(user:RegistraUtente, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
-        return {"message": "Utente creato"}
+        return {
+            "message": "Utente creato",
+            "id": user.id
+            }
 
 
     return {"message": "Utente già esistente"}
