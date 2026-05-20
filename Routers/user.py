@@ -29,9 +29,25 @@ def login(user_in:Login, db: Session = Depends(get_db)):
     refresh_token = crea_refresh_token({"sub":user_in.email,"id":user.id})
     return {
         "name": user.nome_utente,
+        "id": user.id,
+        "email": user.email,
         "access_token": token,
         "refresh_token": refresh_token,
         "token_type": "bearer"
+    }
+
+@router.get("/get_user_info")
+def get_user_info(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    user = db.query(User).filter(User.email == current_user.email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="l'utente non esiste")
+    
+    return {
+        "name": user.nome_utente,
+        "id_utente": user.id,
+        "email": user.email,
+        
     }
 
 

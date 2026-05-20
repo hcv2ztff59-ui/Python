@@ -10,8 +10,8 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 ACCESS_REFRESH_TOKEN_EXPIRE_DAYS =30
 
-DEBUG_ACCESS_TOKEN_EXPIRE_MINUTES = 30
-DEBUG_ACCESS_REFRESH_TOKEN_EXPIRE_DAYS =5
+DEBUG_ACCESS_TOKEN_EXPIRE_MINUTES =  30
+DEBUG_ACCESS_REFRESH_TOKEN_EXPIRE_DAYS = 5
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/login")
 
@@ -39,7 +39,7 @@ def crea_token(data: dict):
     to_encode = data.copy()
     # delta era minutes ma per test lo metto a secondi
     expire = datetime.utcnow() + timedelta(minutes=DEBUG_ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire,"tipo":"access_token"})
+    to_encode.update({"exp": expire,"type":"access_token"})
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

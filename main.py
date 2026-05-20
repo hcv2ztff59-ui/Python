@@ -35,8 +35,8 @@ def get_db():
     finally:
         db.close()
 
-scheduler = AsyncIOScheduler()
-
+#scheduler = AsyncIOScheduler()
+'''
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if not scheduler.running:
@@ -188,10 +188,11 @@ async def controlla_todo() :
         db.close()
     
 
+'''
 
 
-
-app = FastAPI(lifespan=lifespan)
+#app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 
 app.include_router(user)

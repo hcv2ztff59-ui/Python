@@ -34,12 +34,13 @@ class UtenteNoPassw(BaseModel):
 
 
 class CreaTask(BaseModel):
+   
     descrizione : str
     creation_task_datetime : datetime
     task_datetime_repeat : datetime
     titolo : str
     completato : bool = False
-    user_id : int
+   # user_id : int
     isRepeating : bool = False
     every : Optional[int] = None
     option : Optional[str] = None

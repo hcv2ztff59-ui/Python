@@ -34,7 +34,7 @@ def to_utc(dt: Optional[datetime]):
         return dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
 
-@router.post("/crea_task", response_model = CreaTask)
+@router.post("/crea_task", response_model = GetTask)
 async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends(get_current_user)):
     print(" CREA TASK CHIAMATA")
     print(f"accesso effettuato come {current_user['email']}")
@@ -45,7 +45,7 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
     try:
         # L'orario di creazione del task lo faccio generare a lui
         db_task = Task(titolo = task.titolo, 
-                       descrizione = task.descrizione, 
+                       descrizione = task.descrizione if task.descrizione is not None else None, 
                        creation_task_datetime = to_utc(task.creation_task_datetime ), 
                        task_datetime_repeat = to_utc(task.task_datetime_repeat) , 
                        completato = task.completato,
@@ -86,6 +86,15 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
 
     print(f"accesso effettuato come {current_user['email']}")
     task_db = db.query(Task).filter(Task.id_task == id_task,Task.user_id == current_user['id_utente']).first()
+    if task_db is None:
+        raise HTTPException(
+
+            status_code=404,
+
+            detail="Task non trovato"
+
+        )
+
     if task_update.isToUpdate:
         print("isToUpdate è vero, aggiorno data modifica")
         task_update.datetime_task_last_update = datetime.now(timezone.utc)
