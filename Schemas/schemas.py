@@ -11,6 +11,15 @@ class RegistraUtente(BaseModel):
     nome_utente : str
     email : EmailStr
     password : str
+    nickname: Optional[str] = None
+    image_profile : Optional[str] = None
+    class Config:
+        from_attributes = True
+
+class ModificaUtente(BaseModel):
+    nome_utente: Optional[str] = None
+    nickname: Optional[str] = None
+    password: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -27,7 +36,8 @@ class UtenteNoPassw(BaseModel):
 
     nome_utente : str
     email : str
-
+    nickname: Optional[str] = None
+    image_profile: Optional[str] = None
 
     class Config:
         from_attributes = True

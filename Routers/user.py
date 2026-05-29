@@ -2,8 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from Auth.Auth import crea_token, crea_refresh_token, hash_password_register, hash_verify, get_current_user, verifica_refresh_token
 from Models.models import User, NotificationToken
-from Schemas.schemas import RegistraUtente, Login, TokenRequest, RefreshRequest
+from Schemas.schemas import RegistraUtente, Login, TokenRequest, RefreshRequest, ModificaUtente
 from database import SessionLocal
+from fastapi import UploadFile,File
+import shutil
+import os
 
 
 def get_db():
@@ -31,6 +34,8 @@ def login(user_in:Login, db: Session = Depends(get_db)):
         "name": user.nome_utente,
         "id": user.id,
         "email": user.email,
+        "nickname": user.nickname,
+        "image_profile": user.image_profile,
         "access_token": token,
         "refresh_token": refresh_token,
         "token_type": "bearer"
@@ -47,6 +52,8 @@ def get_user_info(current_user = Depends(get_current_user), db: Session = Depend
         "name": user.nome_utente,
         "id_utente": user.id,
         "email": user.email,
+        "nickname": user.nickname,
+        "image_profile": user.image_profile,
         
     }
 
@@ -92,13 +99,57 @@ async def register_token(
 def logout(user:Login, db: Session = Depends(get_db)):
     pass
 
+@router.post("/upload-profile-image")
+async def upload_profile_image(
+    image: UploadFile = File(...),
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)):
+
+    user = db.query(User).filter(
+
+        User.id == current_user["id_utente"]
+
+    ).first()
+
+    if not user:
+
+        raise HTTPException(
+
+            status_code=404,
+
+            detail="Utente non trovato"
+
+        )
+
+    os.makedirs("uploads/profile", exist_ok=True)
+
+    filename = f"user_{user.id}.jpg"
+
+    file_path = f"uploads/profile/{filename}"
+
+    with open(file_path, "wb") as buffer:
+
+        shutil.copyfileobj(image.file, buffer)
+
+    user.image_profile = filename
+
+    db.commit()
+
+    return {
+        "message": "Immagine caricata",
+        "image_profile": file_path
+
+    }
+
 @router.post("/register")
 def register(user:RegistraUtente, db: Session = Depends(get_db)):
     db_query = db.query(User).filter(User.email == user.email).first()
     print(f"Lunghezza in caratteri: {len(user.password)}")
     print(f"Lunghezza in byte: {len(user.password.encode('utf-8'))}")
     if not db_query:
-        user = User(nome_utente = user.nome_utente, email = user.email, password = hash_password_register(user.password) )
+        user = User(nome_utente = user.nome_utente, email = user.email, password = hash_password_register(user.password),nickname = user.nickname )
+        
+    
         db.add(user)
         db.commit()
         db.refresh(user)
@@ -109,3 +160,59 @@ def register(user:RegistraUtente, db: Session = Depends(get_db)):
 
 
     return {"message": "Utente già esistente"}
+
+@router.patch("/profile")
+def save_edited_profile(
+    data: ModificaUtente,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+
+    user = db.query(User).filter(
+        User.id == current_user["id_utente"]
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Utente non trovato"
+        )
+
+    # Nome
+    if data.nome_utente is not None:
+        user.nome_utente = data.nome_utente
+
+    # Nickname
+    if data.nickname is not None and data.nickname != user.nickname:
+
+        nickname_exists = db.query(User).filter(
+            User.nickname == data.nickname,
+            User.id != user.id
+        ).first()
+
+        if nickname_exists:
+            raise HTTPException(
+                status_code=400,
+                detail="Nickname già utilizzato"
+            )
+
+        user.nickname = data.nickname
+
+    # Password
+    if data.password is not None and data.password.strip() != "":
+        user.password = hash_password_register(
+            data.password
+        )
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "Utente modificato",
+        "id": user.id,
+        "nome_utente": user.nome_utente,
+        "email": user.email,
+        "nickname": user.nickname,
+        "image_profile": user.image_profile
+    }
+    
