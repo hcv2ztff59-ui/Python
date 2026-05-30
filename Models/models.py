@@ -11,10 +11,12 @@ class User(Base):
 
     id : Mapped[int] = mapped_column(primary_key=True)
     nome_utente : Mapped[str] = mapped_column(String(50))
+    creation_user_datetime : Mapped[datetime] = mapped_column(DateTime(timezone=True))
     password : Mapped[str] = mapped_column(String)
     email : Mapped[str] = mapped_column(unique=True)
     nickname: Mapped[Optional[str]] = mapped_column(String(100),unique=True,nullable=True)
     image_profile : Mapped[Optional[str]] = mapped_column(String(200), nullable= True)
+    updated_user_datetime : Mapped[Optional[datetime]]  = mapped_column(DateTime(timezone=True),nullable=True)
     notification_tokens = relationship(
         "NotificationToken",
         back_populates="user",

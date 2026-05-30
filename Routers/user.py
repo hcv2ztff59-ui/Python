@@ -7,7 +7,7 @@ from database import SessionLocal
 from fastapi import UploadFile,File
 import shutil
 import os
-
+from datetime import datetime, timezone
 
 def get_db():
     db = SessionLocal()
@@ -149,7 +149,7 @@ def register(user:RegistraUtente, db: Session = Depends(get_db)):
     if not db_query:
         user = User(nome_utente = user.nome_utente, email = user.email, password = hash_password_register(user.password),nickname = user.nickname )
         
-    
+        user.creation_user_datetime =  datetime.now(timezone.utc)
         db.add(user)
         db.commit()
         db.refresh(user)
@@ -178,6 +178,7 @@ def save_edited_profile(
             detail="Utente non trovato"
         )
 
+    user.updated_user_datetime =  datetime.now(timezone.utc)
     # Nome
     if data.nome_utente is not None:
         user.nome_utente = data.nome_utente
