@@ -7,6 +7,9 @@ from database import SessionLocal
 from fastapi import UploadFile,File
 import shutil
 import os
+from pathlib import Path
+from fastapi.responses import FileResponse
+
 from datetime import datetime, timezone
 
 def get_db():
@@ -99,6 +102,28 @@ async def register_token(
 def logout(user:Login, db: Session = Depends(get_db)):
     pass
 
+
+
+@router.get("/profile-image")
+
+def get_profile_image(current_user=Depends(get_current_user),db: Session = Depends(get_db)):
+
+    user = db.query(User).filter(User.id == current_user["id_utente"]).first()
+
+    if not user:
+
+        raise HTTPException(status_code=404)
+
+    image_name = user.image_profile
+
+    if not image_name:
+
+        raise HTTPException(status_code=404)
+
+    image_path = Path("uploads/profile") / image_name
+
+    return FileResponse(image_path)
+
 @router.post("/upload-profile-image")
 async def upload_profile_image(
     image: UploadFile = File(...),
@@ -123,7 +148,7 @@ async def upload_profile_image(
 
     os.makedirs("uploads/profile", exist_ok=True)
 
-    filename = f"user_{user.id}.jpg"
+    filename = f"profile_{user.id}.jpg"
 
     file_path = f"uploads/profile/{filename}"
 
@@ -217,3 +242,54 @@ def save_edited_profile(
         "image_profile": user.image_profile
     }
     
+@router.patch("/profile-sync")
+def sync_edited_profile(
+    data: ModificaUtente,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+
+    user = db.query(User).filter(
+        User.id == current_user["id_utente"]
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Utente non trovato"
+        )
+
+    user.updated_user_datetime =  datetime.now(timezone.utc)
+    # Nome
+    if data.nome_utente is not None:
+        user.nome_utente = data.nome_utente
+
+    # Nickname
+    if data.nickname is not None and data.nickname != user.nickname:
+
+        nickname_exists = db.query(User).filter(
+            User.nickname == data.nickname,
+            User.id != user.id
+        ).first()
+
+        if nickname_exists:
+            raise HTTPException(
+                status_code=400,
+                detail="Nickname già utilizzato"
+            )
+
+        user.nickname = data.nickname
+
+    
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "Utente modificato",
+        "id": user.id,
+        "nome_utente": user.nome_utente,
+        "email": user.email,
+        "nickname": user.nickname,
+        "image_profile": user.image_profile
+    }
