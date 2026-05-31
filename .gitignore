@@ -2,6 +2,7 @@
 # 🔥 PYTHON / FASTAPI
 # =========================
 __pycache__/
+uploads/profile/
 *.pyc
 *.pyo
 *.pyd
