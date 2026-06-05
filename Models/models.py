@@ -2,9 +2,13 @@ from datetime import datetime
 from typing import Optional
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from enum import IntEnum
 from database import Base
 
+class TaskPriority(IntEnum):
+    low = 0
+    medium = 1
+    high = 2
 
 class User(Base):
     __tablename__ = "users"
@@ -45,6 +49,7 @@ class Task(Base):
     # giorni/settimane/mesi/anni
     option : Mapped[String] = mapped_column(String,nullable= True)
     end_recurrency_time : Mapped[int] = mapped_column(Integer,nullable= True)
+    priority: Mapped[int] = mapped_column(Integer,default=TaskPriority.medium.value)
     dateTime_task_end : Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),
         nullable=True

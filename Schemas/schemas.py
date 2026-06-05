@@ -3,7 +3,9 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, EmailStr,field_serializer
 from datetime import datetime, timezone
 
-from Models.models import Task,User
+
+from Models.models import Task,User, TaskPriority
+
 
 
 class RegistraUtente(BaseModel):
@@ -50,12 +52,14 @@ class CreaTask(BaseModel):
     task_datetime_repeat : datetime
     titolo : str
     completato : bool = False
+    priority: TaskPriority = TaskPriority.medium
    # user_id : int
     isRepeating : bool = False
     every : Optional[int] = None
     option : Optional[str] = None
     end_recurrency_time : Optional[int] = None
     dateTime_task_end : Optional[datetime] = None
+    
 
 
     class Config:
@@ -75,6 +79,7 @@ class GetTask(BaseModel):
     end_recurrency_time : Optional[int] = None
     dateTime_task_end : Optional[datetime] = None
     datetime_task_last_update: Optional[datetime] = None
+    priority: TaskPriority
 
     @field_serializer("*", when_used="json")
     def serialize_datetime(self, value):
@@ -101,6 +106,7 @@ class UpdateTask(BaseModel):
     dateTime_task_end : Optional[datetime] = None
     datetime_task_last_update:  Optional[datetime] = None 
     isToUpdate : Optional[bool] = None
+    priority: Optional[TaskPriority] = None
 
     class Config:
         from_attributes = True

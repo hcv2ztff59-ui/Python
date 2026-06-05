@@ -51,6 +51,7 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
                        completato = task.completato,
                        user_id = current_user['id_utente'],
                        isRepeating = task.isRepeating, 
+                       priority = task.priority.value,
                        every = task.every, 
                        option = task.option,
                        end_recurrency_time = task.end_recurrency_time,
@@ -112,6 +113,8 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
     update_data.pop("user_id", None)
     
     for key, value in update_data.items():
+        if key == "priority" and value is not None:
+            value = value.value
         if isinstance(value, datetime):
             value = to_utc(value)
         setattr(task_db, key, value)
@@ -142,6 +145,8 @@ async def update_change_notify(id_task:int,task_update: UpdateTask, db = Depends
     
     
     for key, value in update_data.items():
+        if key == "priority" and value is not None:
+            value = value.value
         if isinstance(value, datetime):
             value = to_utc(value)
         setattr(task_db, key, value)

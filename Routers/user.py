@@ -157,12 +157,13 @@ async def upload_profile_image(
         shutil.copyfileobj(image.file, buffer)
 
     user.image_profile = filename
-
+    user.updated_user_datetime = datetime.utcnow()
     db.commit()
-
+    db.refresh(user)
     return {
         "message": "Immagine caricata",
-        "image_profile": file_path
+        "image_profile": file_path,
+         "updated_user_datetime": user.updated_user_datetime
 
     }
 
@@ -291,5 +292,6 @@ def sync_edited_profile(
         "nome_utente": user.nome_utente,
         "email": user.email,
         "nickname": user.nickname,
-        "image_profile": user.image_profile
+        "image_profile": user.image_profile,
+        "updated_user_datetime": user.updated_user_datetime
     }
