@@ -28,6 +28,7 @@ grpcio-status==1.78.0
 h11==0.16.0
 h2==4.3.0
 hpack==4.1.0
+python-multipart
 httpcore==1.0.9
 httptools==0.7.1
 httpx==0.28.1
