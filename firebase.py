@@ -1,7 +1,15 @@
 import firebase_admin
 from firebase_admin import credentials, messaging
+firebase_json = json.loads(
 
-cred = credentials.Certificate("serviceAccountKey.json")
+    os.environ["FIREBASE_CREDENTIALS"]
+
+)
+
+cred = credentials.Certificate(firebase_json)
+
+
+
 print("Firebase caricato")
 
 try:
