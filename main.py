@@ -238,7 +238,7 @@ async def socket_endpoint(websocket: WebSocket):
 
 @app.get("/")
 async def root():
-   return RedirectResponse(url="/index.php")
+   return RedirectResponse(url="http://localhost:8080/index.php")
 
 
 
