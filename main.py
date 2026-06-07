@@ -238,7 +238,7 @@ async def socket_endpoint(websocket: WebSocket):
 
 @app.get("/")
 async def root():
-   return RedirectResponse(url="todoregistrazione-production.up.railway.app")
+   return RedirectResponse(url="https://todoregistrazione-production.up.railway.app/")
 
 
 
