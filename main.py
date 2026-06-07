@@ -238,11 +238,11 @@ async def socket_endpoint(websocket: WebSocket):
 
 @app.get("/")
 async def root():
-   return {
+    return RedirectResponse(
 
-        "redirect": "https://todoregistrazione-production.up.railway.app/"
+        url="https://todoregistrazione-production.up.railway.app/"
 
-    }
+    )
 
 
 
