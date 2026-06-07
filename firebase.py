@@ -3,13 +3,13 @@ import os
 import json
 
 from firebase_admin import credentials, messaging
-firebase_json = json.loads(
-
-    os.environ["FIREBASE_CREDENTIALS"]
-
-)
-
-cred = credentials.Certificate(firebase_json)
+# todo per upload su github mettterlo a False
+local = False
+if local:
+    cred = credentials.Certificate("serviceAccountKey.json")
+else:
+    firebase_json = json.loads(os.environ["FIREBASE_CREDENTIALS"])
+    cred = credentials.Certificate(firebase_json)
 
 
 

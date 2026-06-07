@@ -16,7 +16,7 @@ from dateutil.relativedelta import relativedelta
 from Auth.Auth import get_current_user_web_socket
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import desc,asc
-
+from fastapi.responses import RedirectResponse
 from firebase import invia_push
 
 
@@ -238,8 +238,7 @@ async def socket_endpoint(websocket: WebSocket):
 
 @app.get("/")
 async def root():
-   # await controlla_todo()
-    return {"message": "Benvenuto!"}
+   return RedirectResponse(url="/index.php")
 
 
 
