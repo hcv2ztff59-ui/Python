@@ -4,7 +4,30 @@ from pydantic import BaseModel, ConfigDict, EmailStr,field_serializer
 from datetime import datetime, timezone
 
 
-from Models.models import Task,User, TaskPriority
+from Models.models import Task,User, TaskPriority, Follow
+
+
+
+class Follower(BaseModel):
+  
+
+    follower_id : int
+    followed_id : int
+    created_at : datetime
+    class Config:
+        from_attributes = True
+
+class Mentions(BaseModel):
+   
+
+    task_id : int
+    mentioned_user_id : int
+    created_by_user_id : int
+    notification_read : bool = False
+    created_at : datetime
+    class Config:
+        from_attributes = True
+   
 
 
 
@@ -22,6 +45,14 @@ class ModificaUtente(BaseModel):
     nome_utente: Optional[str] = None
     nickname: Optional[str] = None
     password: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+        
+        
+class Users(BaseModel):
+    nome_utente: str
+    id:int
 
     class Config:
         from_attributes = True
@@ -49,9 +80,11 @@ class CreaTask(BaseModel):
    
     descrizione : str
     creation_task_datetime : datetime
-    task_datetime_repeat : datetime
+    task_datetime_repeat: datetime | None = None
     titolo : str
     completato : bool = False
+    notificationEnabled : bool = False
+    notify_before : Optional[int] = None
     priority: TaskPriority = TaskPriority.medium
    # user_id : int
     isRepeating : bool = False
@@ -59,7 +92,13 @@ class CreaTask(BaseModel):
     option : Optional[str] = None
     end_recurrency_time : Optional[int] = None
     dateTime_task_end : Optional[datetime] = None
-    
+    is_all_day: bool = False    
+    category : Optional[str] = None
+    all_day_datetime: Optional[datetime] = None
+    location_name :Optional[str] = None
+    longitude  : Optional[float] = None 
+    latitude : Optional[float] = None 
+    isNearEnabled : Optional[bool] = False 
 
 
     class Config:
@@ -69,9 +108,11 @@ class GetTask(BaseModel):
     id_task : int
     descrizione : str
     creation_task_datetime : datetime
-    task_datetime_repeat : datetime
+    task_datetime_repeat: datetime | None = None
     titolo : str
     completato : bool = False
+    notificationEnabled : bool = False
+    notify_before : Optional[int] = None
     user_id : int
     isRepeating :bool = False
     every : Optional[int] = None
@@ -80,6 +121,15 @@ class GetTask(BaseModel):
     dateTime_task_end : Optional[datetime] = None
     datetime_task_last_update: Optional[datetime] = None
     priority: TaskPriority
+    completedAt : Optional[datetime] = None 
+    is_all_day: bool = False    
+    notify_before :Optional[int] = None
+    category : Optional[str] = None
+    all_day_datetime: Optional[datetime] = None
+    location_name :Optional[str] = None
+    longitude  : Optional[float] = None 
+    latitude : Optional[float] = None 
+    isNearEnabled : Optional[bool] = False 
 
     @field_serializer("*", when_used="json")
     def serialize_datetime(self, value):
@@ -96,8 +146,11 @@ class GetTask(BaseModel):
 class UpdateTask(BaseModel):
     descrizione : Optional[str] = None
     task_datetime_repeat : Optional[datetime] = None 
+    completedAt : Optional[datetime] = None 
     titolo : Optional[str] = None
     completato : Optional[bool] = None
+    notificationEnabled : bool = None
+    notify_before : Optional[int] = None
     user_id : Optional[int] = None
     isRepeating :bool = False
     every : Optional[int] = None
@@ -107,6 +160,13 @@ class UpdateTask(BaseModel):
     datetime_task_last_update:  Optional[datetime] = None 
     isToUpdate : Optional[bool] = None
     priority: Optional[TaskPriority] = None
+    is_all_day: bool = False    
+    all_day_datetime: Optional[datetime] = None
+    category : Optional[str]
+    location_name :Optional[str] = None
+    longitude  : Optional[float] = None 
+    latitude : Optional[float] = None 
+    isNearEnabled : Optional[bool] = False 
 
     class Config:
         from_attributes = True

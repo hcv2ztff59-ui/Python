@@ -1,7 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
+from sqlalchemy import or_
 from Auth.Auth import crea_token, crea_refresh_token, hash_password_register, hash_verify, get_current_user, verifica_refresh_token
-from Models.models import User, NotificationToken
+from Models.models import (
+    
+    User,
+
+    NotificationToken,
+
+    Follow,
+
+    TaskMentions,
+
+    Task
+
+)
 from Schemas.schemas import RegistraUtente, Login, TokenRequest, RefreshRequest, ModificaUtente
 from database import SessionLocal
 from fastapi import UploadFile,File
@@ -60,6 +74,53 @@ def get_user_info(current_user = Depends(get_current_user), db: Session = Depend
         
     }
 
+@router.get("/get-users")
+
+def get_users(
+
+    query: str,
+
+    current_user=Depends(get_current_user),
+
+    db: Session = Depends(get_db)
+
+):
+
+    users = db.query(User).filter(
+
+        User.id != current_user["id_utente"],
+            or_(
+
+            User.nickname.ilike(f"%{query}%"),
+
+            User.email.ilike(f"%{query}%"),
+
+            User.nome_utente.ilike(f"%{query}%"),
+
+        )
+        
+
+    ).limit(20).all()
+
+    return [
+
+        {
+
+            "id_utente": user.id,
+
+            "nome_utente": user.nome_utente,
+
+            "email": user.email,
+
+            "nickname": user.nickname,
+
+            "image_profile": user.image_profile,
+
+        }
+
+        for user in users
+
+    ]
 
 @router.post("/refresh_token")
 def refresh_token(data: RefreshRequest):
@@ -295,3 +356,77 @@ def sync_edited_profile(
         "image_profile": user.image_profile,
         "updated_user_datetime": user.updated_user_datetime
     }
+    
+@router.delete("/delete-profile")
+def delete_profile(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    user = db.query(User).filter(
+        User.id == current_user["id_utente"]
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Utente non trovato"
+        )
+        
+    try:
+        # Follow
+
+        if user.image_profile:
+            path = f"uploads/profile/{user.image_profile}"
+            if os.path.exists(path):
+                os.remove(path)
+        
+        db.query(Follow).filter(
+
+            (Follow.follower_id == user.id) |
+
+            (Follow.followed_id == user.id)
+
+        ).delete(synchronize_session=False)
+
+        # Menzioni
+
+        db.query(TaskMentions).filter(
+
+            (TaskMentions.mentioned_user_id == user.id) |
+
+            (TaskMentions.created_by_user_id == user.id)
+
+        ).delete(synchronize_session=False)
+
+        # Task utente
+
+        db.query(Task).filter(
+
+            Task.user_id == user.id
+
+        ).delete(synchronize_session=False)
+
+        db.query(NotificationToken).filter(
+
+            NotificationToken.id_user_ref == user.id
+
+        ).delete(synchronize_session=False)
+        
+        db.delete(user)
+
+        db.commit()
+
+        return {
+
+            "success": True,
+
+            "message": "Account eliminato"
+
+        }
+
+    except Exception:
+
+        db.rollback()
+
+        raise
+    

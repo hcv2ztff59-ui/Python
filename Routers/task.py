@@ -47,15 +47,34 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
         db_task = Task(titolo = task.titolo, 
                        descrizione = task.descrizione if task.descrizione is not None else None, 
                        creation_task_datetime = to_utc(task.creation_task_datetime ), 
-                       task_datetime_repeat = to_utc(task.task_datetime_repeat) , 
+                       all_day_datetime = task.all_day_datetime,
+                       is_all_day = task.is_all_day,
+                       
+                       task_datetime_repeat = (
+
+                                to_utc(task.task_datetime_repeat)
+
+                                if task.task_datetime_repeat
+
+                                else None
+
+                            ), 
                        completato = task.completato,
                        user_id = current_user['id_utente'],
+                       notificationEnabled=task.notificationEnabled,
+                       notify_before=task.notify_before,
                        isRepeating = task.isRepeating, 
                        priority = task.priority.value,
                        every = task.every, 
                        option = task.option,
                        end_recurrency_time = task.end_recurrency_time,
-                       dateTime_task_end = to_utc(task.dateTime_task_end)
+                       dateTime_task_end = to_utc(task.dateTime_task_end),
+                       category = task.category,
+                       location_name = task.location_name,
+                       longitude = task.longitude,
+                       latitude = task.latitude,
+                       isNearEnabled = task.isNearEnabled
+                       
                        )
        
         db.add(db_task)
@@ -77,7 +96,7 @@ def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_u
 
 @router.get("/tutti_task_filtered", response_model = List[GetTask])
 def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
-    print(f"accesso effettuato come {current_user['email']}")
+    print(f"accesso effettuato come {current_user['email']} {current_user['id_utente']}")
     return db.query(Task).filter(Task.user_id == current_user['id_utente']).all()
 
 
@@ -115,6 +134,8 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
     for key, value in update_data.items():
         if key == "priority" and value is not None:
             value = value.value
+       # if key == "task_datetime_repeat" and value  is not None:
+        #   value = value.value
         if isinstance(value, datetime):
             value = to_utc(value)
         setattr(task_db, key, value)
