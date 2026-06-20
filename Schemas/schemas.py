@@ -7,7 +7,21 @@ from datetime import datetime, timezone
 from Models.models import Task,User, TaskPriority, Follow
 
 
+class AddFriendRequest(BaseModel):
+    followed_id: int
+    
+class ForgotPasswordRequest(BaseModel):
 
+    email: str
+    class Config:
+        from_attributes = True
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+    class Config:
+     from_attributes = True
+     
 class Follower(BaseModel):
   
 

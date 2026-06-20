@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from sqlalchemy import or_
-from Auth.Auth import crea_token, crea_refresh_token, hash_password_register, hash_verify, get_current_user, verifica_refresh_token
+from Auth.Auth import crea_token, crea_refresh_token, hash_password_register, hash_verify, get_current_user, verifica_refresh_token, password_recovery_token,verify_reset_password
 from Models.models import (
     
     User,
@@ -13,16 +13,27 @@ from Models.models import (
 
     TaskMentions,
 
-    Task
+    Task,
 
 )
-from Schemas.schemas import RegistraUtente, Login, TokenRequest, RefreshRequest, ModificaUtente
+from Schemas.schemas import (
+    AddFriendRequest,
+    RegistraUtente,
+    Login,
+    TokenRequest,
+    RefreshRequest,
+    ModificaUtente,
+    ForgotPasswordRequest,
+    ResetPasswordRequest
+)
+
 from database import SessionLocal
 from fastapi import UploadFile,File
 import shutil
 import os
 from pathlib import Path
 from fastapi.responses import FileResponse
+from mail.mail import send_reset_email
 
 from datetime import datetime, timezone
 
@@ -77,8 +88,89 @@ def get_user_info(current_user = Depends(get_current_user), db: Session = Depend
 @router.get("/get-users")
 
 def get_users(
-
     query: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    followed_users = (
+    db.query(Follow.followed_id)
+        .filter(
+            Follow.follower_id == current_user["id_utente"]
+        )
+        .subquery()
+    )
+
+    users = db.query(User).filter(
+        User.id != current_user["id_utente"],
+        ~User.id.in_(followed_users),
+        or_(
+            User.nickname.ilike(f"%{query}%"),
+            User.email.ilike(f"%{query}%"),
+            User.nome_utente.ilike(f"%{query}%"),
+        )
+    ).limit(20).all()
+    
+    return [
+        {
+            "id_utente": user.id,
+            "nome_utente": user.nome_utente,
+            "email": user.email,
+            "nickname": user.nickname,
+            "image_profile": user.image_profile,
+        }
+        for user in users
+    ]
+
+@router.get("/get_user_info")
+def get_user_info(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    user = db.query(User).filter(User.email == current_user.email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="l'utente non esiste")
+    
+    return {
+        "name": user.nome_utente,
+        "id_utente": user.id,
+        "email": user.email,
+        "nickname": user.nickname,
+        "image_profile": user.image_profile,
+        
+    }
+
+
+
+@router.get("/remove-friend")
+def remove_friend(
+    remove_id: int,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    follow = db.query(Follow).filter(
+        Follow.follower_id == current_user["id_utente"],
+        Follow.followed_id == remove_id
+    ).first()
+
+    if not follow:
+        raise HTTPException(
+            status_code=404,
+            detail="Amico non trovato"
+        )
+
+    db.delete(follow)
+
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "Amico rimosso"
+    }
+
+@router.post("/add-friend")
+
+def add_friend(
+
+    data: AddFriendRequest,
 
     current_user=Depends(get_current_user),
 
@@ -86,40 +178,79 @@ def get_users(
 
 ):
 
-    users = db.query(User).filter(
+    if data.followed_id == current_user["id_utente"]:
 
-        User.id != current_user["id_utente"],
-            or_(
+        raise HTTPException(
 
-            User.nickname.ilike(f"%{query}%"),
+            status_code=400,
 
-            User.email.ilike(f"%{query}%"),
-
-            User.nome_utente.ilike(f"%{query}%"),
+            detail="Non puoi seguire te stesso"
 
         )
-        
 
-    ).limit(20).all()
+    existing = db.query(Follow).filter(
 
-    return [
+        Follow.follower_id == current_user["id_utente"],
 
-        {
+        Follow.followed_id == data.followed_id
 
-            "id_utente": user.id,
+    ).first()
 
-            "nome_utente": user.nome_utente,
+    if existing:
 
-            "email": user.email,
+        return {
 
-            "nickname": user.nickname,
-
-            "image_profile": user.image_profile,
+            "message": "Utente già seguito"
 
         }
 
-        for user in users
+    follow = Follow(
 
+        follower_id=current_user["id_utente"],
+
+        followed_id=data.followed_id,
+
+        created_at=datetime.now(timezone.utc)
+
+    )
+
+    db.add(follow)
+
+    db.commit()
+
+    return {
+
+        "success": True
+
+    }
+
+@router.get("/get-friend")
+def get_friend(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    users = (
+        db.query(User)
+        .join(
+            Follow,
+            User.id == Follow.followed_id
+        )
+        .filter(
+            Follow.follower_id == current_user["id_utente"]
+        )
+        .all()
+    )
+
+    return [
+        {
+            "id_utente": user.id,
+            "nome_utente": user.nome_utente,
+            "email": user.email,
+            "nickname": user.nickname,
+            "image_profile": user.image_profile,
+        }
+        for user in users
     ]
 
 @router.post("/refresh_token")
@@ -226,6 +357,83 @@ async def upload_profile_image(
         "image_profile": file_path,
          "updated_user_datetime": user.updated_user_datetime
 
+    }
+
+
+
+
+
+@router.post("/forgot-password")
+
+def forgot_password(data: ForgotPasswordRequest,db: Session = Depends(get_db)):
+
+    user = db.query(User).filter(
+
+        User.email == data.email
+
+    ).first()
+
+    if user:
+
+        token = password_recovery_token(user.id)
+        # genera token
+
+        # salva token nel db
+       
+        
+        reset_link = f"http://127.0.0.1:8000/user/reset-password?token={token}"
+
+        # invia email
+        #send_reset_email(user.email,reset_link)
+        print(reset_link)
+
+        return {
+
+            "success": True,
+
+            "token": token
+
+        }
+    return {"success": False}
+  
+
+
+@router.get("/reset-password")
+def verify_reset_link(token: str):
+
+    user_id = verify_reset_password(token)
+
+    return {
+        "valid": True,
+        "user_id": user_id
+    }
+
+@router.post("/reset-password")
+def reset_password(
+    data: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+
+    user_id = verify_reset_password(data.token)
+
+    user = db.query(User).filter(
+        User.id == user_id
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Utente non trovato"
+        )
+
+    user.password = hash_password_register(
+        data.new_password
+    )
+
+    db.commit()
+
+    return {
+        "message": "Password aggiornata"
     }
 
 @router.post("/register")

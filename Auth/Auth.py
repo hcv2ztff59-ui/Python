@@ -1,8 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, Depends
 from jose import jwt, JWTError
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
+from jose import JWTError, ExpiredSignatureError
 
 
 SECRET_KEY = "chiavesegreta"
@@ -34,6 +35,65 @@ def get_current_user_web_socket(token: str):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+def verify_reset_password(token: str) -> int:
+
+    try:
+
+        payload = jwt.decode(
+
+            token,
+
+            SECRET_KEY,
+
+            algorithms=[ALGORITHM]
+
+        )
+
+        if payload.get("type") != "password_reset":
+
+            raise HTTPException(
+
+                status_code=400,
+
+                detail="Token non valido"
+
+            )
+
+        return int(payload["sub"])
+
+    except ExpiredSignatureError:
+
+        raise HTTPException(
+
+            status_code=400,
+
+            detail="Token scaduto"
+
+        )
+
+    except JWTError:
+
+        raise HTTPException(
+
+            status_code=400,
+
+            detail="Token non valido"
+
+        )
+
+def password_recovery_token(userid: int):
+    token = jwt.encode(
+        {
+            "sub": str(userid),
+
+            "type": "password_reset",
+
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1)
+        },
+        SECRET_KEY,
+        algorithm="HS256"
+    )
+    return token
 
 def crea_token(data: dict):
     to_encode = data.copy()
