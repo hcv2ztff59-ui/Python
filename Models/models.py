@@ -76,6 +76,15 @@ class Task(Base):
         DateTime(timezone=True),
         nullable=True
     ) 
+    mentions = relationship(
+
+        "TaskMentions",
+
+        back_populates="task",
+
+        cascade="all, delete-orphan"
+
+    )
 
 class Follow(Base):
     __tablename__ = "follow"
@@ -92,19 +101,29 @@ class Follow(Base):
             name="uq_follow_unique"
         ),
     )
+   
 
 
 class TaskMentions(Base):
     __tablename__ = "task_mentions"
 
-    id : Mapped[int] = mapped_column(primary_key=True)
-    task_id : Mapped[int] = mapped_column(Integer,nullable= False, index=True)
-    mentioned_user_id : Mapped[int] = mapped_column(Integer,nullable= False, index=True)
-    created_by_user_id : Mapped[int] = mapped_column(Integer,nullable= False,index=True)
-    notification_read : Mapped[bool] = mapped_column(Boolean,default=False,index=True)
-    created_at : Mapped[Optional[datetime]]  = mapped_column(DateTime(timezone=True),nullable=True)
-   
+    id: Mapped[int] = mapped_column(primary_key=True)
 
+    task_id: Mapped[int] = mapped_column(
+        ForeignKey("tasks.id_task", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    mentioned_user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    created_by_user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    notification_read: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    task = relationship(
+        "Task",
+        back_populates="mentions"
+    )
 
 class NotificationToken(Base):
     __tablename__ = "notification_tokens"
