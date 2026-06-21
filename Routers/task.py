@@ -194,6 +194,9 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
     db.refresh(task_db)
 
     if mentions is not None:
+        print("MENTIONS RICEVUTE")
+
+        print(mentions)
         db.query(TaskMentions).filter(
             TaskMentions.task_id == id_task
         ).delete(synchronize_session=False)
