@@ -4,7 +4,7 @@ import json
 
 from firebase_admin import credentials, messaging
 # todo per upload su github mettterlo a False
-local = False
+local = True
 if local:
     cred = credentials.Certificate("serviceAccountKey.json")
 else:
