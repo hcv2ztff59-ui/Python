@@ -7,9 +7,10 @@ from sqlalchemy.orm import Session
 from starlette import status
 from datetime import datetime, timezone
 from typing import Optional
-from Models.models import NotificationToken
+from sqlalchemy.orm import joinedload
+from Models.models import NotificationToken, TaskMentions
 from Routers.user import get_current_user
-from Schemas.schemas import Task, CreaTask, TokenRequest, UpdateTask, GetTask
+from Schemas.schemas import Task, CreaTask, TokenRequest, UpdateTask, GetTask, MentionCreate
 from database import SessionLocal
 from services.push_service import send_service
 
@@ -80,11 +81,42 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
         db.add(db_task)
         db.commit()
         db.refresh(db_task)
+
+        mentions = [
+            TaskMentions(
+                task_id=db_task.id_task,
+                mentioned_user_id=m.mentioned_user_id,
+                created_by_user_id=m.created_by_user_id,
+                notification_read=m.notification_read,
+                created_at=m.created_at,
+            )
+            for m in (task.mentions or [])
+
+        ]
+
+        db.add_all(mentions)
+        db.commit()
+        db.refresh(db_task)
+        
+        for m in (task.mentions or []):
+            print(f"Utente {m.mentioned_user_id} menzionato")
+           
+                  
         if manager.has_multiple_connections(current_user['id_utente']):
             await manager.send_new_task_to_user(current_user['id_utente'],{"task_id": db_task.id_task ,"type": "new_task"})
     except Exception as e:
+
         db.rollback()
+
         print(f"errore {e}")
+
+        raise HTTPException(
+
+            status_code=500,
+
+            detail=str(e)
+
+        )
 
     return db_task
 
@@ -94,11 +126,27 @@ def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_u
     return db.query(Task).filter(Task.user_id == current_user['id_utente']).all()
 
 
-@router.get("/tutti_task_filtered", response_model = List[GetTask])
-def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
-    print(f"accesso effettuato come {current_user['email']} {current_user['id_utente']}")
-    return db.query(Task).filter(Task.user_id == current_user['id_utente']).all()
+@router.get("/tutti_task_filtered", response_model=List[GetTask])
 
+def visualizza_tasks(
+
+    db=Depends(get_db),
+
+    current_user=Depends(get_current_user)
+
+):
+
+    return (
+
+        db.query(Task)
+
+        .options(joinedload(Task.mentions))
+
+        .filter(Task.user_id == current_user["id_utente"])
+
+        .all()
+
+    )
 
 # todo provare per la modifica del singolo task se aggiorna datetime_task_last_update durante lo scarico degli aggiornamenti
 @router.patch("/modifica_task")
@@ -124,6 +172,8 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
     print(f"aggiornamento ore {datetime.now()}")
 
     update_data = task_update.model_dump(exclude_unset=True)
+
+    mentions = update_data.pop("mentions", None)
     
     for key, value in update_data.items():
         print(f"${key} - ${value}\n")
@@ -143,6 +193,27 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
     db.commit()
     db.refresh(task_db)
 
+    if mentions is not None:
+        print("MENTIONS RICEVUTE")
+
+        print(mentions)
+        db.query(TaskMentions).filter(
+            TaskMentions.task_id == id_task
+        ).delete(synchronize_session=False)
+       
+        new_mentions = [
+            TaskMentions(
+                task_id=id_task,
+                mentioned_user_id=m["mentioned_user_id"],
+                created_by_user_id=m["created_by_user_id"],
+                notification_read=m["notification_read"],
+                created_at=m["created_at"]
+            )
+            for m in mentions
+        ]
+    
+        db.add_all(new_mentions)
+        db.commit()
     if manager.has_multiple_connections(current_user['id_utente']):
         await manager.send_update_task_to_user(current_user['id_utente'],{"task_id": task_db.id_task ,"type": "updated_task"})
    

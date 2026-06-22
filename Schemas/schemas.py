@@ -7,7 +7,21 @@ from datetime import datetime, timezone
 from Models.models import Task,User, TaskPriority, Follow
 
 
+class AddFriendRequest(BaseModel):
+    followed_id: int
+    
+class ForgotPasswordRequest(BaseModel):
 
+    email: str
+    class Config:
+        from_attributes = True
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+    class Config:
+     from_attributes = True
+     
 class Follower(BaseModel):
   
 
@@ -17,19 +31,30 @@ class Follower(BaseModel):
     class Config:
         from_attributes = True
 
+
+class MentionCreate(BaseModel):
+
+    mentioned_user_id: int
+
+    created_by_user_id: int
+
+    notification_read: bool = False
+
+    created_at: datetime
+
+
+
 class Mentions(BaseModel):
    
-
+    id:int
     task_id : int
     mentioned_user_id : int
     created_by_user_id : int
     notification_read : bool = False
-    created_at : datetime
+    created_at: datetime | None
     class Config:
         from_attributes = True
    
-
-
 
 class RegistraUtente(BaseModel):
 
@@ -99,7 +124,7 @@ class CreaTask(BaseModel):
     longitude  : Optional[float] = None 
     latitude : Optional[float] = None 
     isNearEnabled : Optional[bool] = False 
-
+    mentions: Optional[list[MentionCreate]] = []
 
     class Config:
         from_attributes = True
@@ -138,9 +163,12 @@ class GetTask(BaseModel):
         return value
    
 
+    mentions: list[Mentions] = []
 
     class Config:
-        from_attributes = True
+
+        from_attributes = True  
+    
 
 
 class UpdateTask(BaseModel):
@@ -167,6 +195,7 @@ class UpdateTask(BaseModel):
     longitude  : Optional[float] = None 
     latitude : Optional[float] = None 
     isNearEnabled : Optional[bool] = False 
+    mentions: Optional[list[MentionCreate]] = None
 
     class Config:
         from_attributes = True
