@@ -166,6 +166,79 @@ def remove_friend(
         "message": "Amico rimosso"
     }
 
+@router.delete("/remove-mention")
+def remove_mention(
+    task_id: int,
+    id_user_mentioned: int,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    deleted = (
+
+    db.query(TaskMentions)
+
+    .filter(
+
+        TaskMentions.task_id == task_id,
+
+        TaskMentions.created_by_user_id == current_user["id_utente"],
+
+        TaskMentions.mentioned_user_id == id_user_mentioned
+
+    )
+
+    .delete(synchronize_session=False)
+
+    )
+
+    db.commit()
+
+    return {
+
+        "success": True,
+
+        "deleted": deleted
+
+    }
+
+@router.get("/get-mentions")
+def get_mentions(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    mentions = (
+        db.query(TaskMentions, User)
+        .join(User, User.id == TaskMentions.mentioned_user_id)
+        .filter(
+            TaskMentions.created_by_user_id ==
+            current_user["id_utente"]
+        )
+        .all()
+    )
+
+    return [
+
+    {
+
+        "task_id": mention.task_id,
+
+        "mentioned_user_id": mention.mentioned_user_id,
+
+        "nickname": user.nickname,
+
+        "email": user.email,
+
+        "name": user.nome_utente,
+
+        "image_profile": user.image_profile,
+
+    }
+
+    for mention, user in mentions
+
+]
+
 @router.post("/add-friend")
 
 def add_friend(
