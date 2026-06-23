@@ -242,59 +242,44 @@ def get_mentions(
 @router.post("/add-friend")
 
 def add_friend(
-
     data: AddFriendRequest,
-
     current_user=Depends(get_current_user),
-
     db: Session = Depends(get_db)
-
 ):
-
     if data.followed_id == current_user["id_utente"]:
-
         raise HTTPException(
-
             status_code=400,
-
             detail="Non puoi seguire te stesso"
-
         )
 
     existing = db.query(Follow).filter(
-
         Follow.follower_id == current_user["id_utente"],
-
         Follow.followed_id == data.followed_id
-
     ).first()
-
+    
     if existing:
-
         return {
-
             "message": "Utente già seguito"
-
         }
 
     follow = Follow(
-
         follower_id=current_user["id_utente"],
-
         followed_id=data.followed_id,
-
         created_at=datetime.now(timezone.utc)
-
     )
 
     db.add(follow)
-
     db.commit()
-
+    
+    user = db.query(User).filter(User.id == data.followed_id).first()
+    
+    db.commit()
+    
     return {
-
-        "success": True
-
+        "nickname" : user.nickname,
+        "nome_utente" : user.nome_utente,
+        "image_profile" : user.image_profile,
+        "friend_id" : user.id
     }
 
 @router.get("/get-friend")
