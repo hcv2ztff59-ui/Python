@@ -17,8 +17,9 @@ from Auth.Auth import get_current_user_web_socket
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import desc,asc
 from fastapi.responses import RedirectResponse
-from firebase import invia_push
+from firebase import invia_push, invia_push_silenziosa
 from fastapi.staticfiles import StaticFiles
+
 
 
 
@@ -266,4 +267,5 @@ if __name__ == "__main__":
         reload=False,
         log_level="info"
     )
+   
     

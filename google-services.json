@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "243794260694",
+    "project_id": "apitodo-8b27f",
+    "storage_bucket": "apitodo-8b27f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:243794260694:android:8134949a6389f667014f77",
+        "android_client_info": {
+          "package_name": "com.davidemantia.todo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSOspP_EW_0Jt_xFDmYBntHUcSY8MN8js"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

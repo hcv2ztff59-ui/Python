@@ -15,7 +15,6 @@ else:
     service_account = json.loads(os.environ["FIREBASE_CREDENTIALS"])
     cred = credentials.Certificate(service_account)
 
-firebase_admin.initialize_app(cred)
 
 print("Firebase caricato")
 
@@ -26,6 +25,143 @@ except ValueError:
     print("Firebase inizializzato correttamente")
 
 
+def invia_push_silenziosa(token: str, event: str):
+
+    message = messaging.Message(
+
+        token=token,
+
+        data={
+
+            "event": event,
+
+        },
+
+        android=messaging.AndroidConfig(
+
+            priority="high",
+
+        ),
+
+    )
+
+    try:
+
+        response = messaging.send(message)
+
+        print("PUSH INVIATA:", response)
+
+        return response
+
+    except Exception as e:
+
+        print("ERRORE PUSH:", e)
+
+        raise
+    
+def invia_push_richiesta_amicizia(token_dispositivo, nickname, id_utente):
+
+    # Se è una stringa la trasformo in lista
+    print("=== INVIA PUSH RICHIESTA ===")
+
+    print("TOKEN:", token_dispositivo)
+
+    print("NICKNAME:", nickname)
+
+    print("USER ID:", id_utente)
+    if isinstance(token_dispositivo, str):
+
+        token_dispositivo = [token_dispositivo]
+
+    print("LISTA TOKEN:", token_dispositivo)
+
+    print("NUMERO TOKEN:", len(token_dispositivo))
+    if len(token_dispositivo) == 1:
+        print("Invio con Message")
+        message = messaging.Message(
+
+            token=token_dispositivo[0],
+
+            notification=messaging.Notification(
+
+                title="Nuova richiesta di amicizia",
+
+                body=f"{nickname} ti ha inviato una richiesta di amicizia",
+
+            ),
+
+            data={
+
+                "event": "friend_request",
+
+                "user_id": str(id_utente),
+
+            },
+
+            android=messaging.AndroidConfig(
+
+                priority="high",
+
+                notification=messaging.AndroidNotification(
+
+                    channel_id="TODO_CHANNEL_ID",
+
+                ),
+
+            ),
+
+        )
+
+        response = messaging.send(message)
+
+        print("RISPOSTA FIREBASE:", response)
+        return response
+
+    else:
+        print("Invio con Multicast")
+        message = messaging.MulticastMessage(
+
+            tokens=token_dispositivo,
+
+            notification=messaging.Notification(
+
+                title="Nuova richiesta di amicizia",
+
+                body=f"{nickname} ti ha inviato una richiesta di amicizia",
+
+            ),
+
+            data={
+
+                "event": "friend_request",
+
+                "user_id": str(id_utente),
+
+            },
+
+            android=messaging.AndroidConfig(
+
+                priority="high",
+
+                notification=messaging.AndroidNotification(
+
+                    channel_id="TODO_CHANNEL_ID",
+
+                ),
+
+            ),
+
+        )
+
+        response = messaging.send_each_for_multicast(message)
+
+        print("SUCCESS:", response.success_count)
+
+        print("FAIL:", response.failure_count)
+
+        return response
+    
+    
 def invia_push(token_dispositivo, titolo_task,msg:str):
     message = messaging.MulticastMessage(
         notification=messaging.Notification(title=titolo_task,body=msg),

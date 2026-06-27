@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from sqlalchemy import or_ , and_
+from firebase import invia_push, invia_push_silenziosa, invia_push_richiesta_amicizia
 from Auth.Auth import crea_token, crea_refresh_token, hash_password_register, hash_verify, get_current_user, verifica_refresh_token, password_recovery_token,verify_reset_password
 from Models.models import (
     
@@ -457,13 +458,12 @@ def set_friend_request(
             status_code=403,
             detail="Operazione non consentita"
         )
-
+    
+    
     if data.accepted:
         follow.request_accepted = True
         db.commit()
-        return {
-            "success": True
-        }
+       
     db.delete(follow)
     db.commit()
     return {
@@ -476,21 +476,19 @@ def add_friend(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    
-    
-    user = (
-    db.query(User)
-    .filter(User.id == data.followed_id)
-    .first()
-)
 
-    if not user:
-
-        raise HTTPException(
-        status_code=404,
-        detail="Utente non trovato"
+    receiver = (
+        db.query(User)
+        .filter(User.id == data.followed_id)
+        .first()
     )
-        
+
+    if not receiver:
+        raise HTTPException(
+            status_code=404,
+            detail="Utente non trovato"
+        )
+
     if data.followed_id == current_user["id_utente"]:
         raise HTTPException(
             status_code=400,
@@ -498,34 +496,27 @@ def add_friend(
         )
 
     existing = (
-
-    db.query(Follow)
-    .filter(
-        or_(
-            and_(
-                Follow.follower_id == current_user["id_utente"],
-                Follow.followed_id == data.followed_id,
-            ),
-            and_(
-                Follow.follower_id == data.followed_id,
-                Follow.followed_id == current_user["id_utente"],
-            ),
+        db.query(Follow)
+        .filter(
+            or_(
+                and_(
+                    Follow.follower_id == current_user["id_utente"],
+                    Follow.followed_id == data.followed_id,
+                ),
+                and_(
+                    Follow.follower_id == data.followed_id,
+                    Follow.followed_id == current_user["id_utente"],
+                ),
+            )
         )
+        .first()
     )
 
-    .first()
-
-)
-    
     if existing:
-
         raise HTTPException(
-
-        status_code=409,
-
-        detail="Richiesta già esistente"
-
-    )
+            status_code=409,
+            detail="Richiesta già esistente"
+        )
 
     follow = Follow(
         follower_id=current_user["id_utente"],
@@ -535,14 +526,38 @@ def add_friend(
 
     db.add(follow)
     db.commit()
-      
-    return {
-        "nickname" : user.nickname,
-        "nome_utente" : user.nome_utente,
-        "image_profile" : user.image_profile,
-        "friend_id" : user.id
-    }
 
+    # Utente che ha inviato la richiesta
+    sender = (
+        db.query(User)
+        .filter(User.id == current_user["id_utente"])
+        .first()
+    )
+
+    # Token del destinatario
+    tokens = (
+        db.query(NotificationToken)
+        .filter(NotificationToken.id_user_ref == receiver.id)
+        .all()
+    )
+
+    for token in tokens:
+        try:
+            invia_push_richiesta_amicizia(
+                token.fcm_token,
+                sender.nickname,
+                sender.id,
+            )
+        except Exception as e:
+            print(e)
+
+    return {
+        "success": True,
+        "nickname": receiver.nickname,
+        "nome_utente": receiver.nome_utente,
+        "image_profile": receiver.image_profile,
+        "friend_id": receiver.id,
+    }
 @router.get("/get-friend")
 def get_friend(
     current_user=Depends(get_current_user),
@@ -631,6 +646,8 @@ async def register_token(
     try:
         db.add(new_token)
         db.commit()
+        
+       
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Errore durante il salvataggio del token")

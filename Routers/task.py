@@ -14,6 +14,7 @@ from Schemas.schemas import Task, CreaTask, TokenRequest, UpdateTask, GetTask, M
 from database import SessionLocal
 from services.push_service import send_service
 from sqlalchemy import or_, and_
+from firebase import invia_push, invia_push_silenziosa
 
 router = APIRouter( prefix="/task", tags=["Task"])
 
@@ -100,11 +101,22 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
         db.refresh(db_task)
         
         for m in (task.mentions or []):
+            if m.mentioned_user_id == current_user["id_utente"]:
+                continue
+            
             print(f"Utente {m.mentioned_user_id} menzionato")
+            tokens = db.query(NotificationToken).filter(
+            NotificationToken.id_user_ref == m.mentioned_user_id
+            ).all()
+
+            for token in tokens:
+                invia_push_silenziosa(
+                    token.fcm_token,
+                    "refresh"
+                )
            
                   
-        if manager.has_multiple_connections(current_user['id_utente']):
-            await manager.send_new_task_to_user(current_user['id_utente'],{"task_id": db_task.id_task ,"type": "new_task"})
+       
     except Exception as e:
 
         db.rollback()
@@ -215,8 +227,21 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
     
         db.add_all(new_mentions)
         db.commit()
-    if manager.has_multiple_connections(current_user['id_utente']):
-        await manager.send_update_task_to_user(current_user['id_utente'],{"task_id": task_db.id_task ,"type": "updated_task"})
+        
+        for m in new_mentions:
+
+            if m.mentioned_user_id == current_user["id_utente"]:
+                continue
+            tokens = db.query(NotificationToken).filter(
+                NotificationToken.id_user_ref == m.mentioned_user_id
+                ).all()
+
+            for token in tokens:
+                invia_push_silenziosa(
+                    token.fcm_token,                    
+                    "refresh"
+                )
+
    
     
     return {"msg":"Valori Aggiornati"}
