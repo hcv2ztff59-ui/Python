@@ -19,6 +19,7 @@ from sqlalchemy import desc,asc
 from fastapi.responses import RedirectResponse
 from firebase import invia_push, invia_push_silenziosa
 from fastapi.staticfiles import StaticFiles
+import os
 
 
 
@@ -201,6 +202,9 @@ app = FastAPI()
 app.include_router(user)
 app.include_router(task)
 
+os.makedirs("uploads", exist_ok=True)
+
+os.makedirs("uploads/profile", exist_ok=True)
 app.mount(
 
     "/uploads",
