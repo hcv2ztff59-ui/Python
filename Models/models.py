@@ -92,6 +92,7 @@ class Follow(Base):
     id : Mapped[int] = mapped_column(primary_key=True)
     follower_id : Mapped[int] = mapped_column(Integer,nullable= False,index=True)
     followed_id : Mapped[int] = mapped_column(Integer,nullable= False,index=True)
+    request_accepted : Mapped[bool] = mapped_column(Boolean,nullable=False, default=False)
     created_at : Mapped[Optional[datetime]]  = mapped_column(DateTime(timezone=True),nullable=True)
 
     __table_args__ = (

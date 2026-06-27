@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from sqlalchemy import or_
+from sqlalchemy import or_ , and_
 from Auth.Auth import crea_token, crea_refresh_token, hash_password_register, hash_verify, get_current_user, verifica_refresh_token, password_recovery_token,verify_reset_password
 from Models.models import (
     
@@ -24,7 +24,8 @@ from Schemas.schemas import (
     RefreshRequest,
     ModificaUtente,
     ForgotPasswordRequest,
-    ResetPasswordRequest
+    ResetPasswordRequest,
+    FollowResponse
 )
 
 from database import SessionLocal
@@ -146,10 +147,37 @@ def remove_friend(
     db: Session = Depends(get_db)
 ):
 
-    follow = db.query(Follow).filter(
-        Follow.follower_id == current_user["id_utente"],
-        Follow.followed_id == remove_id
-    ).first()
+    follow = (
+
+     db.query(Follow)
+
+        .filter(
+             Follow.request_accepted == True,
+            or_(
+
+                and_(
+
+                    Follow.follower_id == current_user["id_utente"],
+
+                    Follow.followed_id == remove_id,
+
+                ),
+
+                and_(
+
+                    Follow.follower_id == remove_id,
+
+                    Follow.followed_id == current_user["id_utente"],
+
+                ),
+
+            )
+
+        )
+
+        .first()
+
+    )
 
     if not follow:
         raise HTTPException(
@@ -174,32 +202,127 @@ def remove_mention(
     db: Session = Depends(get_db)
 ):
 
-    deleted = (
-
-    db.query(TaskMentions)
-
-    .filter(
-
-        TaskMentions.task_id == task_id,
-
-        TaskMentions.created_by_user_id == current_user["id_utente"],
-
-        TaskMentions.mentioned_user_id == id_user_mentioned
-
+    mention = (
+        db.query(TaskMentions)
+        .filter(
+            TaskMentions.task_id == task_id,
+            TaskMentions.mentioned_user_id == id_user_mentioned,
+            or_(
+                TaskMentions.created_by_user_id == current_user["id_utente"],
+                TaskMentions.mentioned_user_id == current_user["id_utente"]
+            )
+        )
+        .first()
     )
 
-    .delete(synchronize_session=False)
+    if not mention:
+        raise HTTPException(status_code=404)
 
+    task = (
+        db.query(Task)
+        .filter(Task.id_task == mention.task_id)
+        .first()
     )
+
+    # Se è il menzionato a rimuoversi
+    if mention.mentioned_user_id == current_user["id_utente"]:
+
+        user = db.query(User).filter(
+            User.id == mention.mentioned_user_id
+        ).first()
+
+        if user and user.nickname and task and task.titolo:
+            
+            task.titolo = task.titolo.replace(
+                f"@{user.nickname}",
+                ""
+            ).replace("  ", " ").strip()
+
+    db.delete(mention)
+
+    if task:
+        task.datetime_task_last_update = datetime.now(timezone.utc)
 
     db.commit()
 
     return {
+        "success": True
+    }
 
-        "success": True,
+# todo ritorna notifications-count ritorna count ,friend_request,, mentions
 
-        "deleted": deleted
+@router.get("/notifications-count")
+def notifications_count(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
 
+    friend_requests = (
+        db.query(Follow)
+        .filter(
+            Follow.followed_id == current_user["id_utente"],
+            Follow.request_accepted == 0
+        )
+        .count()
+    )
+
+    mentions = (
+        db.query(TaskMentions)
+        .filter(
+            TaskMentions.mentioned_user_id == current_user["id_utente"]
+        )
+        .count()
+    )
+
+    return {
+        "count": friend_requests + mentions,
+        "friend_requests": friend_requests,
+        "mentions": mentions
+    }
+
+
+@router.get("/friend-requests-count")
+def friend_requests_count(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    friend_requests = (
+        db.query(Follow)
+        .filter(
+            Follow.followed_id == current_user["id_utente"],
+            Follow.request_accepted == 0
+        )
+        .count()
+    )
+
+   
+    return {
+        "count": friend_requests ,
+       
+       
+    }
+
+
+@router.get("/mentions-unread-count")
+def mentions_unread_count(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+   
+
+    mentions = (
+        db.query(TaskMentions)
+        .filter(
+            TaskMentions.mentioned_user_id == current_user["id_utente"],
+            TaskMentions.notification_read == 0
+        )
+        .count()
+    )
+
+    return {
+        "count": mentions ,
     }
 
 @router.get("/get-mentions")
@@ -207,14 +330,27 @@ def get_mentions(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    
     mentions = (
-        db.query(TaskMentions, User)
-        .join(User, User.id == TaskMentions.mentioned_user_id)
-        .filter(
-            TaskMentions.created_by_user_id ==
-            current_user["id_utente"]
+
+    db.query(TaskMentions, User)
+
+    .join(User, User.id == TaskMentions.mentioned_user_id)
+
+    .filter(
+
+        or_(
+
+            TaskMentions.created_by_user_id == current_user["id_utente"],
+
+            TaskMentions.mentioned_user_id == current_user["id_utente"]
+
         )
-        .all()
+
+    )
+
+    .all()
+
     )
 
     return [
@@ -225,6 +361,8 @@ def get_mentions(
 
         "mentioned_user_id": mention.mentioned_user_id,
 
+        "created_by_user_id": mention.created_by_user_id,
+
         "nickname": user.nickname,
 
         "email": user.email,
@@ -233,34 +371,161 @@ def get_mentions(
 
         "image_profile": user.image_profile,
 
+        "is_shared_by_me":
+
+            mention.created_by_user_id == current_user["id_utente"]
+
     }
 
     for mention, user in mentions
 
 ]
 
-@router.post("/add-friend")
+@router.get("/friend-requests")
+def friend_requests(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    
+    
+    print("CURRENT USER", current_user["id_utente"])
 
+    for f in db.query(Follow).all():
+
+        print(
+
+            f"id={f.id}, "
+
+            f"follower={f.follower_id}, "
+
+            f"followed={f.followed_id}, "
+
+            f"accepted={f.request_accepted}"
+
+        )
+    users = (
+        db.query(User, Follow.id)
+        .join(
+            Follow,
+            User.id == Follow.follower_id
+        )
+        .filter(
+            Follow.followed_id == current_user["id_utente"],
+            Follow.request_accepted == False
+        )
+        .all()
+    )
+    
+    for user, follow_id in users:
+
+        print(f"user.id={user.id} follow_id={follow_id}")
+
+    return [
+        {
+            "follow_id": follow_id,
+            "id_utente": user.id,
+            "nome_utente": user.nome_utente,
+            "nickname": user.nickname,
+            "image_profile": user.image_profile,
+        }
+        for user, follow_id in users
+    ]
+    
+@router.patch("/set-friend-request")
+
+def set_friend_request(
+    data: FollowResponse,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    follow = (
+        db.query(Follow)
+        .filter(Follow.id == data.follow_id)
+        .first()
+    )
+
+    if not follow:
+        raise HTTPException(
+            status_code=404,
+            detail="Richiesta non trovata"
+        )
+
+    # Solo il destinatario può accettare/rifiutare
+
+    if follow.followed_id != current_user["id_utente"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Operazione non consentita"
+        )
+
+    if data.accepted:
+        follow.request_accepted = True
+        db.commit()
+        return {
+            "success": True
+        }
+    db.delete(follow)
+    db.commit()
+    return {
+        "success": False
+    }
+    
+@router.post("/add-friend")
 def add_friend(
     data: AddFriendRequest,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    
+    
+    user = (
+    db.query(User)
+    .filter(User.id == data.followed_id)
+    .first()
+)
+
+    if not user:
+
+        raise HTTPException(
+        status_code=404,
+        detail="Utente non trovato"
+    )
+        
     if data.followed_id == current_user["id_utente"]:
         raise HTTPException(
             status_code=400,
             detail="Non puoi seguire te stesso"
         )
 
-    existing = db.query(Follow).filter(
-        Follow.follower_id == current_user["id_utente"],
-        Follow.followed_id == data.followed_id
-    ).first()
+    existing = (
+
+    db.query(Follow)
+    .filter(
+        or_(
+            and_(
+                Follow.follower_id == current_user["id_utente"],
+                Follow.followed_id == data.followed_id,
+            ),
+            and_(
+                Follow.follower_id == data.followed_id,
+                Follow.followed_id == current_user["id_utente"],
+            ),
+        )
+    )
+
+    .first()
+
+)
     
     if existing:
-        return {
-            "message": "Utente già seguito"
-        }
+
+        raise HTTPException(
+
+        status_code=409,
+
+        detail="Richiesta già esistente"
+
+    )
 
     follow = Follow(
         follower_id=current_user["id_utente"],
@@ -270,11 +535,7 @@ def add_friend(
 
     db.add(follow)
     db.commit()
-    
-    user = db.query(User).filter(User.id == data.followed_id).first()
-    
-    db.commit()
-    
+      
     return {
         "nickname" : user.nickname,
         "nome_utente" : user.nome_utente,
@@ -289,17 +550,45 @@ def get_friend(
 ):
 
     users = (
-        db.query(User)
-        .join(
-            Follow,
-            User.id == Follow.followed_id
-        )
+    db.query(User)
+
+    .join(
+
+        Follow,
+
+         or_(
+
+              and_(
+
+                  Follow.follower_id == current_user["id_utente"],
+
+                  User.id == Follow.followed_id,
+
+             ),
+
+                and_(
+
+                    Follow.followed_id == current_user["id_utente"],
+
+                 User.id == Follow.follower_id,
+
+              ),
+
+          )
+
+      )
+
         .filter(
-            Follow.follower_id == current_user["id_utente"]
+
+            Follow.request_accepted == True
+
         )
+
         .all()
+
     )
 
+   
     return [
         {
             "id_utente": user.id,

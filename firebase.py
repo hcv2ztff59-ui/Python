@@ -4,14 +4,18 @@ import json
 
 from firebase_admin import credentials, messaging
 # todo per upload su github mettterlo a False
-local = False
-if local:
+
+
+
+
+
+if os.path.exists("serviceAccountKey.json"):
     cred = credentials.Certificate("serviceAccountKey.json")
 else:
-    firebase_json = json.loads(os.environ["FIREBASE_CREDENTIALS"])
-    cred = credentials.Certificate(firebase_json)
+    service_account = json.loads(os.environ["FIREBASE_CREDENTIALS"])
+    cred = credentials.Certificate(service_account)
 
-
+firebase_admin.initialize_app(cred)
 
 print("Firebase caricato")
 

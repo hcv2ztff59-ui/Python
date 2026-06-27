@@ -18,6 +18,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import desc,asc
 from fastapi.responses import RedirectResponse
 from firebase import invia_push
+from fastapi.staticfiles import StaticFiles
+
 
 
 #todo se il server si spegne o ha un ionterruzzione deve ricalcolare tutte le date dei task
@@ -198,6 +200,15 @@ app = FastAPI()
 app.include_router(user)
 app.include_router(task)
 
+app.mount(
+
+    "/uploads",
+
+    StaticFiles(directory="uploads"),
+
+    name="uploads"
+
+)
 
 @app.websocket("/ws")
 async def socket_endpoint(websocket: WebSocket):

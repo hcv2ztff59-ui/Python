@@ -13,6 +13,7 @@ from Routers.user import get_current_user
 from Schemas.schemas import Task, CreaTask, TokenRequest, UpdateTask, GetTask, MentionCreate
 from database import SessionLocal
 from services.push_service import send_service
+from sqlalchemy import or_, and_
 
 router = APIRouter( prefix="/task", tags=["Task"])
 
@@ -127,27 +128,27 @@ def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_u
 
 
 @router.get("/tutti_task_filtered", response_model=List[GetTask])
-
 def visualizza_tasks(
-
     db=Depends(get_db),
-
     current_user=Depends(get_current_user)
-
 ):
-
     return (
-
         db.query(Task)
-
+        .outerjoin(
+            TaskMentions,
+            Task.id_task == TaskMentions.task_id
+        )
         .options(joinedload(Task.mentions))
-
-        .filter(Task.user_id == current_user["id_utente"])
-
+        .filter(
+            or_(
+                Task.user_id == current_user["id_utente"],
+                TaskMentions.mentioned_user_id == current_user["id_utente"]
+            )
+        )
+        .distinct()
         .all()
-
     )
-
+    
 # todo provare per la modifica del singolo task se aggiorna datetime_task_last_update durante lo scarico degli aggiornamenti
 @router.patch("/modifica_task")
 async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db), current_user = Depends(get_current_user)):

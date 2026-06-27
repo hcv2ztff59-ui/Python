@@ -24,13 +24,19 @@ class ResetPasswordRequest(BaseModel):
      
 class Follower(BaseModel):
   
-
+    id: int
     follower_id : int
     followed_id : int
+    request_accepted : bool
     created_at : datetime
     class Config:
         from_attributes = True
 
+class FollowResponse(BaseModel):
+    follow_id: int
+    accepted: bool
+    class Config:
+        from_attributes = True
 
 class MentionCreate(BaseModel):
 
