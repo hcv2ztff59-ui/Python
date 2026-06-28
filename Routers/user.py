@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from sqlalchemy import or_ , and_
-from firebase import invia_push, invia_push_silenziosa, invia_push_richiesta_amicizia
+from firebase import invia_push, invia_push_silenziosa, invia_push_notifica
 from Auth.Auth import crea_token, crea_refresh_token, hash_password_register, hash_verify, get_current_user, verifica_refresh_token, password_recovery_token,verify_reset_password
 from Models.models import (
     
@@ -71,6 +71,8 @@ def login(user_in:Login, db: Session = Depends(get_db)):
         "token_type": "bearer"
     }
 
+
+
 @router.get("/get_user_info")
 def get_user_info(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
 
@@ -87,8 +89,9 @@ def get_user_info(current_user = Depends(get_current_user), db: Session = Depend
         
     }
 
-@router.get("/get-users")
 
+
+@router.get("/get-users")
 def get_users(
     query: str,
     current_user=Depends(get_current_user),
@@ -123,6 +126,9 @@ def get_users(
         for user in users
     ]
 
+
+
+
 @router.get("/get_user_info")
 def get_user_info(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
 
@@ -141,6 +147,7 @@ def get_user_info(current_user = Depends(get_current_user), db: Session = Depend
 
 
 
+
 @router.get("/remove-friend")
 def remove_friend(
     remove_id: int,
@@ -155,29 +162,17 @@ def remove_friend(
         .filter(
              Follow.request_accepted == True,
             or_(
-
                 and_(
-
                     Follow.follower_id == current_user["id_utente"],
-
                     Follow.followed_id == remove_id,
-
                 ),
-
                 and_(
-
                     Follow.follower_id == remove_id,
-
                     Follow.followed_id == current_user["id_utente"],
-
                 ),
-
             )
-
         )
-
         .first()
-
     )
 
     if not follow:
@@ -187,13 +182,14 @@ def remove_friend(
         )
 
     db.delete(follow)
-
     db.commit()
 
     return {
         "success": True,
         "message": "Amico rimosso"
     }
+
+
 
 @router.delete("/remove-mention")
 def remove_mention(
@@ -202,54 +198,159 @@ def remove_mention(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    print("REMOVE MENTION CHIAMATO")
 
-    mention = (
+    # Recupero tutte le menzioni del task
+    mentions = (
         db.query(TaskMentions)
-        .filter(
-            TaskMentions.task_id == task_id,
-            TaskMentions.mentioned_user_id == id_user_mentioned,
-            or_(
-                TaskMentions.created_by_user_id == current_user["id_utente"],
-                TaskMentions.mentioned_user_id == current_user["id_utente"]
-            )
-        )
-        .first()
+        .filter(TaskMentions.task_id == task_id)
+        .all()
     )
+
+    if not mentions:
+        raise HTTPException(status_code=404)
+
+    
+   
+    # Verifico se l'utente corrente è il creatore del task
+    is_creator = any(
+        m.created_by_user_id == current_user["id_utente"]
+        for m in mentions
+    )
+    
+    print("CURRENT USER:", current_user["id_utente"])
+
+    for m in mentions:
+
+        print(
+
+            f"mentioned={m.mentioned_user_id} "
+
+            f"created_by={m.created_by_user_id}"
+
+        )
+        
+        
+    print("IS CREATOR:", is_creator)
+    if is_creator:
+        # Il creatore rimuove una qualsiasi menzione
+        mention = (
+            db.query(TaskMentions)
+            .filter(
+                TaskMentions.task_id == task_id,
+                TaskMentions.mentioned_user_id == id_user_mentioned,
+            )
+            .first()
+        )
+    else:
+        # Il menzionato può rimuovere solo se stesso
+        mention = (
+            db.query(TaskMentions)
+            .filter(
+                TaskMentions.task_id == task_id,
+                TaskMentions.mentioned_user_id == current_user["id_utente"],
+            )
+            .first()
+        )
 
     if not mention:
         raise HTTPException(status_code=404)
 
     task = (
         db.query(Task)
-        .filter(Task.id_task == mention.task_id)
+        .filter(Task.id_task == task_id)
         .first()
     )
 
-    # Se è il menzionato a rimuoversi
-    if mention.mentioned_user_id == current_user["id_utente"]:
+    # Se il menzionato si rimuove da solo elimino anche @nickname dal titolo
+    if (
+        task
+        and mention.mentioned_user_id == current_user["id_utente"]
+    ):
+        user = (
+            db.query(User)
+            .filter(User.id == mention.mentioned_user_id)
+            .first()
+        )
 
-        user = db.query(User).filter(
-            User.id == mention.mentioned_user_id
-        ).first()
-
-        if user and user.nickname and task and task.titolo:
-            
-            task.titolo = task.titolo.replace(
-                f"@{user.nickname}",
-                ""
-            ).replace("  ", " ").strip()
+        if user and user.nickname:
+            task.titolo = (
+                task.titolo
+                .replace(f"@{user.nickname}", "")
+                .replace("  ", " ")
+                .strip()
+            )
 
     db.delete(mention)
 
     if task:
         task.datetime_task_last_update = datetime.now(timezone.utc)
+        print("PRIMA COMMIT:", task.datetime_task_last_update)
 
     db.commit()
+
+    if task:
+        db.refresh(task)
+        print("DOPO COMMIT:", task.datetime_task_last_update)
+
+    # Push al proprietario del task (se non è chi ha eseguito la rimozione)
+    print("TASK USER:", task.user_id)
+    print("CURRENT USER:", current_user["id_utente"])
+
+    if task and task.user_id != current_user["id_utente"]:
+        print("ENTRO PUSH OWNER")
+
+        tokens = (
+            db.query(NotificationToken)
+            .filter(NotificationToken.id_user_ref == task.user_id)
+            .all()
+        )
+
+        print("TOKEN TROVATI:", len(tokens))
+
+        for token in tokens:
+            print("TOKEN:", token.fcm_token)
+            print("CHIAMO INVIA_PUSH_SILENZIOSA")
+
+            invia_push_silenziosa(
+                token.fcm_token,
+                "refresh",
+            )
+
+        print("FINE PUSH OWNER")
+    else:
+        print("NON ENTRO NEL BLOCCO OWNER")
+    # Push a tutti gli utenti ancora menzionati
+    remaining_mentions = (
+        db.query(TaskMentions)
+        .filter(TaskMentions.task_id == task_id)
+        .all()
+    )
+
+    print("MENZIONI RIMASTE:", len(remaining_mentions))
+
+    for m in remaining_mentions:
+
+        if m.mentioned_user_id == current_user["id_utente"]:
+            continue
+
+        tokens = (
+            db.query(NotificationToken)
+            .filter(NotificationToken.id_user_ref == m.mentioned_user_id)
+            .all()
+        )
+
+        print("PUSH MENTION:", m.mentioned_user_id)
+
+        for token in tokens:
+            invia_push_silenziosa(
+                token.fcm_token,
+                "refresh",
+            )
 
     return {
         "success": True
     }
-
 # todo ritorna notifications-count ritorna count ,friend_request,, mentions
 
 @router.get("/notifications-count")
@@ -296,12 +397,9 @@ def friend_requests_count(
         )
         .count()
     )
-
    
     return {
-        "count": friend_requests ,
-       
-       
+        "count": friend_requests ,       
     }
 
 
@@ -310,8 +408,6 @@ def mentions_unread_count(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-
-   
 
     mentions = (
         db.query(TaskMentions)
@@ -326,6 +422,9 @@ def mentions_unread_count(
         "count": mentions ,
     }
 
+
+
+
 @router.get("/get-mentions")
 def get_mentions(
     current_user=Depends(get_current_user),
@@ -335,52 +434,34 @@ def get_mentions(
     mentions = (
 
     db.query(TaskMentions, User)
-
     .join(User, User.id == TaskMentions.mentioned_user_id)
-
     .filter(
-
         or_(
-
             TaskMentions.created_by_user_id == current_user["id_utente"],
-
             TaskMentions.mentioned_user_id == current_user["id_utente"]
-
         )
-
     )
-
     .all()
-
     )
 
     return [
-
     {
-
         "task_id": mention.task_id,
-
         "mentioned_user_id": mention.mentioned_user_id,
-
         "created_by_user_id": mention.created_by_user_id,
-
         "nickname": user.nickname,
-
         "email": user.email,
-
         "name": user.nome_utente,
-
         "image_profile": user.image_profile,
-
         "is_shared_by_me":
-
             mention.created_by_user_id == current_user["id_utente"]
-
     }
 
-    for mention, user in mentions
+        for mention, user in mentions
 
-]
+    ]
+
+
 
 @router.get("/friend-requests")
 def friend_requests(
@@ -390,19 +471,12 @@ def friend_requests(
     
     
     print("CURRENT USER", current_user["id_utente"])
-
     for f in db.query(Follow).all():
-
         print(
-
             f"id={f.id}, "
-
             f"follower={f.follower_id}, "
-
             f"followed={f.followed_id}, "
-
             f"accepted={f.request_accepted}"
-
         )
     users = (
         db.query(User, Follow.id)
@@ -432,8 +506,9 @@ def friend_requests(
         for user, follow_id in users
     ]
     
+    
+    
 @router.patch("/set-friend-request")
-
 def set_friend_request(
     data: FollowResponse,
     current_user=Depends(get_current_user),
@@ -458,17 +533,62 @@ def set_friend_request(
             status_code=403,
             detail="Operazione non consentita"
         )
+        
+    sender = (
+
+        db.query(User)
+
+        .filter(User.id == follow.follower_id)
+
+        .first()
+
+    )
+
+    receiver = (
+
+        db.query(User)
+
+        .filter(User.id == follow.followed_id)
+
+        .first()
+
+    )
     
     
     if data.accepted:
         follow.request_accepted = True
         db.commit()
-       
+         # Token del destinatario
+        tokens = (
+            db.query(NotificationToken)
+            .filter(NotificationToken.id_user_ref == sender.id)
+            .all()
+        )
+
+        for token in tokens:
+            try:
+                invia_push_notifica(
+                    token.fcm_token,
+                    receiver.nickname,
+                    receiver.id,
+                    "Richiesta di amicizia",
+                    f"{receiver.nickname} ha accettato la richiesta",
+                    "friend_request"
+                )
+            except Exception as e:
+                print(e)
+        return {
+
+        "success": True
+
+        }
     db.delete(follow)
     db.commit()
     return {
         "success": False
     }
+    
+    
     
 @router.post("/add-friend")
 def add_friend(
@@ -543,10 +663,13 @@ def add_friend(
 
     for token in tokens:
         try:
-            invia_push_richiesta_amicizia(
+            invia_push_notifica(
                 token.fcm_token,
                 sender.nickname,
                 sender.id,
+                "Nuova richiesta di amicizia",
+                f"{sender.nickname} ti ha inviato una richiesta di amicizia",    
+                "friend_request"
             )
         except Exception as e:
             print(e)
@@ -558,6 +681,10 @@ def add_friend(
         "image_profile": receiver.image_profile,
         "friend_id": receiver.id,
     }
+    
+    
+    
+    
 @router.get("/get-friend")
 def get_friend(
     current_user=Depends(get_current_user),
@@ -566,41 +693,23 @@ def get_friend(
 
     users = (
     db.query(User)
-
     .join(
-
         Follow,
-
          or_(
-
               and_(
-
                   Follow.follower_id == current_user["id_utente"],
-
                   User.id == Follow.followed_id,
-
              ),
-
                 and_(
-
                     Follow.followed_id == current_user["id_utente"],
-
                  User.id == Follow.follower_id,
-
               ),
-
           )
-
       )
-
         .filter(
-
             Follow.request_accepted == True
-
         )
-
         .all()
-
     )
 
    
@@ -614,6 +723,9 @@ def get_friend(
         }
         for user in users
     ]
+
+
+
 
 @router.post("/refresh_token")
 def refresh_token(data: RefreshRequest):

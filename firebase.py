@@ -59,7 +59,7 @@ def invia_push_silenziosa(token: str, event: str):
 
         raise
     
-def invia_push_richiesta_amicizia(token_dispositivo, nickname, id_utente):
+def invia_push_notifica(token_dispositivo, nickname, id_utente, title,body,event):
 
     # Se è una stringa la trasformo in lista
     print("=== INVIA PUSH RICHIESTA ===")
@@ -84,15 +84,15 @@ def invia_push_richiesta_amicizia(token_dispositivo, nickname, id_utente):
 
             notification=messaging.Notification(
 
-                title="Nuova richiesta di amicizia",
+                title= title,
 
-                body=f"{nickname} ti ha inviato una richiesta di amicizia",
+                body=body,
 
             ),
 
             data={
 
-                "event": "friend_request",
+                "event": event,
 
                 "user_id": str(id_utente),
 

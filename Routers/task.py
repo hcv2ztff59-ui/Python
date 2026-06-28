@@ -14,7 +14,8 @@ from Schemas.schemas import Task, CreaTask, TokenRequest, UpdateTask, GetTask, M
 from database import SessionLocal
 from services.push_service import send_service
 from sqlalchemy import or_, and_
-from firebase import invia_push, invia_push_silenziosa
+from firebase import invia_push, invia_push_silenziosa, invia_push_notifica
+from Models.models import User
 
 router = APIRouter( prefix="/task", tags=["Task"])
 
@@ -50,6 +51,7 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
         db_task = Task(titolo = task.titolo, 
                        descrizione = task.descrizione if task.descrizione is not None else None, 
                        creation_task_datetime = to_utc(task.creation_task_datetime ), 
+                       datetime_task_last_update=datetime.now(timezone.utc), 
                        all_day_datetime = task.all_day_datetime,
                        is_all_day = task.is_all_day,
                        
@@ -99,7 +101,13 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
         db.add_all(mentions)
         db.commit()
         db.refresh(db_task)
+        sender = (
+                db.query(User)
+                .filter(User.id == current_user["id_utente"])
+                .first()
+            )
         
+            
         for m in (task.mentions or []):
             if m.mentioned_user_id == current_user["id_utente"]:
                 continue
@@ -110,9 +118,14 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
             ).all()
 
             for token in tokens:
-                invia_push_silenziosa(
+                invia_push_notifica(
                     token.fcm_token,
-                    "refresh"
+                     m.mentioned_user_id,
+                    "mention_created",
+                    "Nuova menzione",
+                    f"{sender.nickname } ti ha menzionato in un task",
+                    
+                    "mention_created"
                 )
            
                   
@@ -133,10 +146,13 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
 
     return db_task
 
+
+
 @router.get("/tutti_task", response_model = List[GetTask])
 def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_user)):
     print(f"accesso effettuato come {current_user['email']}")
     return db.query(Task).filter(Task.user_id == current_user['id_utente']).all()
+
 
 
 @router.get("/tutti_task_filtered", response_model=List[GetTask])
@@ -144,7 +160,7 @@ def visualizza_tasks(
     db=Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    return (
+    tasks = (
         db.query(Task)
         .outerjoin(
             TaskMentions,
@@ -160,7 +176,18 @@ def visualizza_tasks(
         .distinct()
         .all()
     )
-    
+
+    print("========== TASK RESTITUITI ==========")
+    for t in tasks:
+        print(
+            f"TASK={t.id_task} "
+            f"OWNER={t.user_id} "
+            f"UPDATE={t.datetime_task_last_update} "
+            f"MENTIONS={len(t.mentions)}"
+        )
+
+    return tasks
+
 # todo provare per la modifica del singolo task se aggiorna datetime_task_last_update durante lo scarico degli aggiornamenti
 @router.patch("/modifica_task")
 async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db), current_user = Depends(get_current_user)):
@@ -282,11 +309,36 @@ async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends
     if not task_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task non trovato")
 
+   
+    
+    mentions = (
+    db.query(TaskMentions)
+    .filter(TaskMentions.task_id == id_task)
+    .all()
+)
+    
+    sender = (
+    db.query(User)
+    .filter(User.id == current_user["id_utente"])
+    .first()
+)
+    
+    for mention in mentions:
+        tokens = (
+            db.query(NotificationToken)
+            .filter(NotificationToken.id_user_ref == mention.mentioned_user_id)
+            .all()
+        )
+
+        for token in tokens:
+            invia_push_silenziosa(
+                token.fcm_token,
+                "mention_deleted",
+            )
+    
     db.delete(task_db)
     db.commit()
-    if manager.has_multiple_connections(current_user['id_utente']):
-        await manager.send_deleted_task_to_user(current_user['id_utente'],{"task_id": task_db.id_task ,"type": "deleted_task"})
-
+    
     return {"msg":"Task eliminato"}
    
 
