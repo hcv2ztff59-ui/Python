@@ -97,7 +97,9 @@ async def socket_endpoint(websocket: WebSocket):
         print("🔴 errore ws:", e)
         manager.disconnect(user_id, websocket)
    
-
+@app.get("/debug/tokens")
+def debug_tokens(db: Session = Depends(get_db)):
+    return db.query(NotificationToken).all()
 
 @app.get("/")
 async def root():
