@@ -102,7 +102,7 @@ def invia_push_notifica(token_dispositivo, nickname, id_utente, title,body,event
                 "user_id": str(id_utente),
 
             },
-
+            
             android=messaging.AndroidConfig(
 
                 priority="high",
@@ -114,6 +114,7 @@ def invia_push_notifica(token_dispositivo, nickname, id_utente, title,body,event
                 ),
 
             ),
+            
 
         )
 
