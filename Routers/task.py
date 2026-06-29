@@ -212,6 +212,8 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
     print(f"aggiornamento ore {datetime.now()}")
 
     update_data = task_update.model_dump(exclude_unset=True)
+    print(update_data)
+    print(update_data.get("datetime_task_last_update"))
 
     mentions = update_data.pop("mentions", None)
     

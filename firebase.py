@@ -1,7 +1,7 @@
 import firebase_admin
 import os
 import json
-
+import traceback
 from firebase_admin import credentials, messaging
 # todo per upload su github mettterlo a False
 
@@ -55,7 +55,11 @@ def invia_push_silenziosa(token: str, event: str):
 
     except Exception as e:
 
-        print("ERRORE PUSH:", e)
+        print(type(e))
+
+        print(repr(e))
+
+        traceback.print_exc()
 
         raise
     
@@ -112,10 +116,23 @@ def invia_push_notifica(token_dispositivo, nickname, id_utente, title,body,event
 
         )
 
-        response = messaging.send(message)
+        try:
 
-        print("RISPOSTA FIREBASE:", response)
-        return response
+            response = messaging.send(message)
+
+            print("RISPOSTA FIREBASE:", response)
+
+            return response
+
+        except Exception as e:
+
+            print(type(e))
+
+            print(repr(e))
+
+            traceback.print_exc()
+
+            raise
 
     else:
         print("Invio con Multicast")
@@ -182,4 +199,10 @@ def invia_push(token_dispositivo, titolo_task,msg:str):
         print(f"Inviati con successo: {response.success_count}")
         print(f"Falliti: {response.failure_count}")
     except Exception as e:
-        print(f"errore notifica {e}")
+        print(type(e))
+
+        print(repr(e))
+
+        traceback.print_exc()
+
+        raise

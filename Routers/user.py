@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from sqlalchemy import or_ , and_
 from firebase import invia_push, invia_push_silenziosa, invia_push_notifica
+import re
 from Auth.Auth import crea_token, crea_refresh_token, hash_password_register, hash_verify, get_current_user, verifica_refresh_token, password_recovery_token,verify_reset_password
 from Models.models import (
     
@@ -263,23 +264,32 @@ def remove_mention(
     )
 
     # Se il menzionato si rimuove da solo elimino anche @nickname dal titolo
-    if (
-        task
-        and mention.mentioned_user_id == current_user["id_utente"]
-    ):
+    if task:
+
         user = (
+
             db.query(User)
+
             .filter(User.id == mention.mentioned_user_id)
+
             .first()
+
         )
 
         if user and user.nickname:
+
             task.titolo = (
+
                 task.titolo
+
                 .replace(f"@{user.nickname}", "")
+
                 .replace("  ", " ")
+
                 .strip()
+
             )
+            task.titolo = re.sub(r"\s+", " ", task.titolo).strip()
 
     db.delete(mention)
 
@@ -734,37 +744,25 @@ def refresh_token(data: RefreshRequest):
 # endpoint per token notifiche push
 @router.post("/register-token")
 async def register_token(
-        request: TokenRequest,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
+    request: TokenRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    # 1. Controlliamo se il token esiste già nel DB
-    existing_token = db.query(NotificationToken).filter(
-        NotificationToken.fcm_token == request.fcm_token
-    ).first()
+    # Elimina tutti i vecchi token dell'utente
+    db.query(NotificationToken).filter(
+        NotificationToken.id_user_ref == current_user["id_utente"]
+    ).delete()
 
-    if existing_token:
-        # Se esiste già ma è di un altro utente (raro ma possibile), lo aggiorniamo
-        existing_token.id_user_ref = current_user['id_utente']
-        db.commit()
-        return {"message": "Token aggiornato"}
-
-    # 2. Se non esiste, creiamo un nuovo record
+    # Salva quello nuovo
     new_token = NotificationToken(
         fcm_token=request.fcm_token,
-        id_user_ref=current_user['id_utente']
+        id_user_ref=current_user["id_utente"]
     )
 
-    try:
-        db.add(new_token)
-        db.commit()
-        
-       
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail="Errore durante il salvataggio del token")
+    db.add(new_token)
+    db.commit()
 
-    return {"message": "Token registrato con successo"}
+    return {"message": "Token registrato"}
 
 @router.post("/logout")
 def logout(user:Login, db: Session = Depends(get_db)):
