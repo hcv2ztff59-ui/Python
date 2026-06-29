@@ -3,6 +3,7 @@ import os
 import json
 import traceback
 from firebase_admin import credentials, messaging
+from firebase_admin.messaging import UnregisteredError
 # todo per upload su github mettterlo a False
 
 

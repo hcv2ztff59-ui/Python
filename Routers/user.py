@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from sqlalchemy import or_ , and_
-from firebase import invia_push, invia_push_silenziosa, invia_push_notifica
+from firebase import invia_push, invia_push_silenziosa, invia_push_notifica, UnregisteredError
 import re
 from Auth.Auth import crea_token, crea_refresh_token, hash_password_register, hash_verify, get_current_user, verifica_refresh_token, password_recovery_token,verify_reset_password
 from Models.models import (
@@ -351,12 +351,22 @@ def remove_mention(
         )
 
         print("PUSH MENTION:", m.mentioned_user_id)
+        try:
+            for token in tokens:
+                invia_push_silenziosa(
+                    token.fcm_token,
+                    "refresh",
+                )
+                
+        except UnregisteredError:
 
-        for token in tokens:
-            invia_push_silenziosa(
-                token.fcm_token,
-                "refresh",
-            )
+            db.query(NotificationToken).filter(
+
+                NotificationToken.fcm_token == token.fcm_token
+
+            ).delete()
+
+            db.commit()
 
     return {
         "success": True
@@ -585,8 +595,18 @@ def set_friend_request(
                     f"{receiver.nickname} ha accettato la richiesta",
                     "friend_request"
                 )
-            except Exception as e:
-                print(e)
+            except UnregisteredError:
+
+                db.query(NotificationToken).filter(
+
+                    NotificationToken.fcm_token == token.fcm_token
+
+                ).delete()
+
+                db.commit()
+
+
+
         return {
 
         "success": True
@@ -681,8 +701,16 @@ def add_friend(
                 f"{sender.nickname} ti ha inviato una richiesta di amicizia",    
                 "friend_request"
             )
-        except Exception as e:
-            print(e)
+        except UnregisteredError:
+
+            db.query(NotificationToken).filter(
+
+                NotificationToken.fcm_token == token.fcm_token
+
+            ).delete()
+
+            db.commit()
+
 
     return {
         "success": True,
@@ -741,29 +769,30 @@ def get_friend(
 def refresh_token(data: RefreshRequest):
    return verifica_refresh_token(data.refresh_token)
 
-# endpoint per token notifiche push
 @router.post("/register-token")
 async def register_token(
     request: TokenRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Elimina tutti i vecchi token dell'utente
-    db.query(NotificationToken).filter(
-        NotificationToken.id_user_ref == current_user["id_utente"]
-    ).delete()
-
-    # Salva quello nuovo
-    new_token = NotificationToken(
-        fcm_token=request.fcm_token,
-        id_user_ref=current_user["id_utente"]
+    token = (
+        db.query(NotificationToken)
+        .filter(NotificationToken.fcm_token == request.fcm_token)
+        .first()
     )
 
-    db.add(new_token)
+    if token:
+        token.id_user_ref = current_user["id_utente"]
+    else:
+        token = NotificationToken(
+            fcm_token=request.fcm_token,
+            id_user_ref=current_user["id_utente"]
+        )
+        db.add(token)
+
     db.commit()
 
     return {"message": "Token registrato"}
-
 @router.post("/logout")
 def logout(user:Login, db: Session = Depends(get_db)):
     pass

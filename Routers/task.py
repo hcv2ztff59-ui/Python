@@ -14,7 +14,7 @@ from Schemas.schemas import Task, CreaTask, TokenRequest, UpdateTask, GetTask, M
 from database import SessionLocal
 from services.push_service import send_service
 from sqlalchemy import or_, and_
-from firebase import invia_push, invia_push_silenziosa, invia_push_notifica
+from firebase import invia_push, invia_push_silenziosa, invia_push_notifica,UnregisteredError       
 from Models.models import User
 
 router = APIRouter( prefix="/task", tags=["Task"])
@@ -116,18 +116,28 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
             tokens = db.query(NotificationToken).filter(
             NotificationToken.id_user_ref == m.mentioned_user_id
             ).all()
-
+        
             for token in tokens:
-                invia_push_notifica(
-                    token.fcm_token,
-                     m.mentioned_user_id,
-                    "mention_created",
-                    "Nuova menzione",
-                    f"{sender.nickname } ti ha menzionato in un task",
-                    
-                    "mention_created"
-                )
-           
+                try:
+                    invia_push_notifica(
+                        token.fcm_token,
+                        m.mentioned_user_id,
+                        "mention_created",
+                        "Nuova menzione",
+                        f"{sender.nickname } ti ha menzionato in un task",
+                        
+                        "mention_created"
+                    )
+                except UnregisteredError:
+
+                    db.query(NotificationToken).filter(
+
+                        NotificationToken.fcm_token == token.fcm_token
+
+                    ).delete()
+
+                    db.commit()
+            
                   
        
     except Exception as e:
@@ -264,12 +274,22 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
             tokens = db.query(NotificationToken).filter(
                 NotificationToken.id_user_ref == m.mentioned_user_id
                 ).all()
-
+            
             for token in tokens:
-                invia_push_silenziosa(
-                    token.fcm_token,                    
-                    "refresh"
-                )
+                try:
+                    invia_push_silenziosa(
+                        token.fcm_token,                    
+                        "refresh"
+                    )
+                except UnregisteredError:
+
+                    db.query(NotificationToken).filter(
+
+                        NotificationToken.fcm_token == token.fcm_token
+
+                    ).delete()
+
+                    db.commit()
 
    
     
@@ -332,12 +352,28 @@ async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends
             .all()
         )
 
-        for token in tokens:
+    for token in tokens:
+
+        try:
+
             invia_push_silenziosa(
+
                 token.fcm_token,
+
                 "mention_deleted",
+
             )
-    
+
+        except UnregisteredError:
+
+            db.query(NotificationToken).filter(
+
+                NotificationToken.fcm_token == token.fcm_token
+
+            ).delete()
+
+            db.commit()
+        
     db.delete(task_db)
     db.commit()
     
