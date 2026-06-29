@@ -29,21 +29,27 @@ except ValueError:
 def invia_push_silenziosa(token: str, event: str):
 
     message = messaging.Message(
-
         token=token,
 
         data={
-
-            "event": event,
-
+        "event": event,
         },
 
         android=messaging.AndroidConfig(
-
             priority="high",
-
         ),
 
+        apns=messaging.APNSConfig(
+            headers={
+                "apns-push-type": "background",
+                "apns-priority": "5",
+            },
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(
+                    content_available=True,
+                )
+            ),
+        ),
     )
 
     try:
@@ -114,6 +120,26 @@ def invia_push_notifica(token_dispositivo, nickname, id_utente, title,body,event
                 ),
 
             ),
+            apns=messaging.APNSConfig(
+
+                headers={
+
+                    "apns-priority": "10",
+                    "apns-push-type": "alert",
+
+                },
+
+                payload=messaging.APNSPayload(
+
+                    aps=messaging.Aps(
+
+                    sound="default",
+
+                    )
+
+                ),
+
+            ),
             
 
         )
@@ -169,6 +195,17 @@ def invia_push_notifica(token_dispositivo, nickname, id_utente, title,body,event
                 ),
 
             ),
+            apns=messaging.APNSConfig(
+                headers={
+                    "apns-priority": "10",
+                    "apns-push-type": "alert",
+                },
+                payload=messaging.APNSPayload(
+                    aps=messaging.Aps(
+                    sound="default",
+                    )
+                ),
+            ),
 
         )
 
@@ -191,6 +228,17 @@ def invia_push(token_dispositivo, titolo_task,msg:str):
                 priority='high',  # Forza la comparsa del banner (Heads-up)
                 default_sound=True,
                 default_vibrate_timings=True
+            ),
+        ),
+        apns=messaging.APNSConfig(
+            headers={
+                "apns-priority": "10",
+                "apns-push-type": "alert",
+            },
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(
+                    sound="default",
+                )
             ),
         ),
         tokens=token_dispositivo
