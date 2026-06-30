@@ -347,6 +347,8 @@ async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends
     .first()
 )
     
+    print("Prima della push")
+
     for mention in mentions:
         tokens = (
             db.query(NotificationToken)
@@ -354,30 +356,23 @@ async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends
             .all()
         )
 
-    for token in tokens:
+        for token in tokens:
+            print("Invio push a", token.fcm_token)
+            try:
+                invia_push_silenziosa(
+                    token.fcm_token,
+                    "mention_deleted",
+                )
+            except UnregisteredError:
+                db.query(NotificationToken).filter(
+                    NotificationToken.fcm_token == token.fcm_token
+                ).delete()
+                db.commit()
 
-        try:
-
-            invia_push_silenziosa(
-
-                token.fcm_token,
-
-                "mention_deleted",
-
-            )
-
-        except UnregisteredError:
-
-            db.query(NotificationToken).filter(
-
-                NotificationToken.fcm_token == token.fcm_token
-
-            ).delete()
-
-            db.commit()
-        
+    print("Elimino task")
     db.delete(task_db)
     db.commit()
+    print("Task eliminato")
     
     return {"msg":"Task eliminato"}
    
