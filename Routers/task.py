@@ -119,10 +119,12 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
         
             for token in tokens:
                 try:
+                   
                     invia_push_notifica(
                         token.fcm_token,
+                        sender.nickname,
                         m.mentioned_user_id,
-                        "mention_created",
+                        
                         "Nuova menzione",
                         f"{sender.nickname } ti ha menzionato in un task",
                         
