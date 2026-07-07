@@ -26,12 +26,13 @@ except ValueError:
     print("Firebase inizializzato correttamente")
 
 
-def invia_push_silenziosa(token: str, event: str):
+def invia_push_silenziosa(token: str, event: str,extra_data=None):
 
     message = messaging.Message(
         token=token,
         data={
             "event": event,
+            "extra_data": extra_data,
         },
         android=messaging.AndroidConfig(
             priority="high",
@@ -67,7 +68,7 @@ def invia_push_silenziosa(token: str, event: str):
 
         raise
     
-def invia_push_notifica(token_dispositivo, nickname, id_utente, title,body,event):
+def invia_push_notifica(token_dispositivo, nickname, id_utente, title,body,event,extra_data=None):
 
     # Se è una stringa la trasformo in lista
     print("=== INVIA PUSH RICHIESTA ===")
@@ -95,6 +96,7 @@ def invia_push_notifica(token_dispositivo, nickname, id_utente, title,body,event
             data={
                 "event": event,
                 "user_id": str(id_utente),
+                "extra_data": extra_data,
             },
             
             android=messaging.AndroidConfig(
