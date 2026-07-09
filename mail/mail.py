@@ -2,7 +2,7 @@ import resend
 
 resend.api_key = "re_Mm6BSpWK_4V8zE692tmzf9cxKRwNDL8sS"
 
-def send_email(email: str, reset_link: str, obj:str , body: str):
+def send_email(email: str, obj:str , body: str):
 
     params = {
         "from": "Pladdy <support@pladdy.it>",

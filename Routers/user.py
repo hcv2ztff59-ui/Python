@@ -497,6 +497,24 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
     if user:
         token = password_recovery_token(user.id)
         reset_link = f"pladdy;//user/reset-password?token={token}"
+        
+        send_email(email= User.email, 
+                  
+                   obj = "Rigenera Password",
+                   body= f"""
+        <h2>Recupero password</h2>
+
+        <p>Hai richiesto il reset della password.</p>
+
+        <p>
+            <a href="{reset_link}">
+                Reimposta Password
+            </a>
+        </p>
+
+        <p>Il link scadrà tra 1 ora.</p>""")
+        
+        # inviare push a tutti i dispositivi
         print(reset_link)
         return {
             "success": True,
