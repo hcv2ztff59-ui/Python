@@ -498,7 +498,7 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
         token = password_recovery_token(user.id)
         reset_link = f"pladdy;//user/reset-password?token={token}"
         
-        send_email(email= User.email, 
+        send_email(email= user.email, 
                   
                    obj = "Rigenera Password",
                    body= f"""
