@@ -640,6 +640,9 @@ def delete_profile(db: Session = Depends(get_db), current_user = Depends(get_cur
             if os.path.exists(path):
                 os.remove(path)
         
+        
+        email_user = user.email
+        
         db.query(Follow).filter((Follow.follower_id == user.id) | (Follow.followed_id == user.id)).delete(synchronize_session=False)
         db.query(TaskMentions).filter((TaskMentions.mentioned_user_id == user.id) | (TaskMentions.created_by_user_id == user.id)).delete(synchronize_session=False)
         db.query(Task).filter(Task.user_id == user.id).delete(synchronize_session=False)
@@ -647,6 +650,25 @@ def delete_profile(db: Session = Depends(get_db), current_user = Depends(get_cur
         
         db.delete(user)
         db.commit()
+        
+        send_email(
+            email=email_user, 
+            obj="Cancellazione profilo",
+            body=f"""
+           <h2>Cancellazione Account Pladdy completata</h2>
+
+            <p>Ciao,</p>
+
+            <p>Ti confermiamo che il tuo account sull'app <strong>Pladdy</strong> è stato eliminato con successo, come da te richiesto.</p>
+
+            <p>In conformità con le normative sulla privacy (GDPR), tutti i tuoi dati personali, i tuoi task, le tue menzioni e le tue relazioni di amicizia sono stati rimossi definitivamente dai nostri sistemi e non potranno più essere recuperati.</p>
+
+            <p>Ci dispiace vederti andare via! Se in futuro vorrai tornare a organizzare i tuoi task con noi, la porta di Pladdy sarà sempre aperta.</p>
+
+            <p>Grazie per aver fatto parte della nostra community.<br>
+            <em>Il team di Pladdy</em></p>
+            """
+        )
         return {
             "success": True,
             "message": "Account eliminato"
