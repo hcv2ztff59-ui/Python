@@ -496,7 +496,7 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
     if user:
         token = password_recovery_token(user.id)
-        reset_link = f"pladdy;//user/reset-password?token={token}"
+        reset_link = f"pladdy://reset-password?token={token}"
         
         send_email(email= user.email, 
                   
