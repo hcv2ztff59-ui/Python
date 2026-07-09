@@ -499,7 +499,7 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
         token = password_recovery_token(user.id)
         
         # 1. Il link nell'email DEVE essere un URL HTTP/HTTPS standard (sostituisci localhost con il tuo IP pubblico/dominio in produzione)
-        reset_link = f"http://127.0.0.1:8000/user/reset-password?token={token}"
+        reset_link = f"https://python-production-5e31.up.railway.app/user/reset-password?token={token}"
         
         send_email(
             email=user.email, 
