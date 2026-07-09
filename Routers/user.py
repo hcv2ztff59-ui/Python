@@ -33,7 +33,7 @@ from Schemas.schemas import (
     FollowResponse
 )
 from database import SessionLocal
-from mail.mail import send_reset_email
+from mail.mail import send_email
 
 def get_db():
     db = SessionLocal()
