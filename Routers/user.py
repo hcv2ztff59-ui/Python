@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime, timezone
 from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
 
 from Auth.Auth import (
     crea_token, 
@@ -496,41 +497,48 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
     if user:
         token = password_recovery_token(user.id)
-        reset_link = f"pladdy://reset-password?token={token}"
         
-        send_email(email= user.email, 
-                  
-                   obj = "Rigenera Password",
-                   body= f"""
-        <h2>Recupero password</h2>
-
-        <p>Hai richiesto il reset della password.</p>
-
-        <p>
-            <a href="{reset_link}">
-                Reimposta Password
-            </a>
-        </p>
-
-        <p>Il link scadrà tra 1 ora.</p>""")
+        # 1. Il link nell'email DEVE essere un URL HTTP/HTTPS standard (sostituisci localhost con il tuo IP pubblico/dominio in produzione)
+        reset_link = f"http://127.0.0.1:8000/user/reset-password?token={token}"
         
-        # inviare push a tutti i dispositivi
+        send_email(
+            email=user.email, 
+            obj="Rigenera Password",
+            body=f"""
+            <h2>Recupero password</h2>
+            <p>Hai richiesto il reset della password.</p>
+            <p>Clicca sul pulsante qui sotto per reimpostarla direttamente nell'applicazione:</p>
+            <p>
+                <a href="{reset_link}" style="background-color: #007AFF; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; display: inline-block;">
+                    Reimposta Password
+                </a>
+            </p>
+            <p>Se il pulsante non funziona, copia e incolla questo link nel browser:<br>{reset_link}</p>
+            <p>Il link scadrà tra 1 ora.</p>
+            """
+        )
+        
         print(reset_link)
         return {
             "success": True,
             "token": token
         }
     return {"success": False}
-  
+
 
 @router.get("/reset-password")
 def verify_reset_link(token: str):
+    # Verifichiamo se il token è valido ed estraiamo l'id utente
     user_id = verify_reset_password(token)
-    return {
-        "valid": True,
-        "user_id": user_id
-    }
+    
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Token non valido o scaduto")
 
+    # 2. Generiamo il Deep Link personalizzato che sveglierà l'app Flutter
+    app_deep_link = f"pladdy://reset-password?token={token}"
+    
+    # 3. Reindirizziamo il browser verso l'app mobile
+    return RedirectResponse(url=app_deep_link)
 
 @router.post("/reset-password")
 def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
