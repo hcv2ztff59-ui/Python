@@ -2,13 +2,22 @@ import resend
 
 resend.api_key = "re_Mm6BSpWK_4V8zE692tmzf9cxKRwNDL8sS"
 
-def send_reset_email(email: str, reset_link: str):
+def send_email(email: str, reset_link: str, obj:str , body: str):
 
     params = {
-        "from": "Todo App <onboarding@resend.dev>",
+        "from": "Pladdy <support@pladdy.it>",
         "to": [email],
-        "subject": "Recupero password",
-        "html": f"""
+        "subject": obj,
+        "html": body 
+    }
+
+    resend.Emails.send(params)
+    
+    
+    
+    '''
+    
+    f"""
         <h2>Recupero password</h2>
 
         <p>Hai richiesto il reset della password.</p>
@@ -20,7 +29,4 @@ def send_reset_email(email: str, reset_link: str):
         </p>
 
         <p>Il link scadrà tra 1 ora.</p>
-        """
-    }
-
-    resend.Emails.send(params)
+    '''
