@@ -8,7 +8,7 @@ uploads/profile/
 *.pyd
 *.log
 *.sqlite3
-*.db
+#*.db
 
 # Virtual environment
 .venv/
