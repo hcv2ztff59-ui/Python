@@ -8,7 +8,7 @@ uploads/profile/
 *.pyd
 *.log
 *.sqlite3
-#*.db
+*.db
 
 # Virtual environment
 .venv/
@@ -30,7 +30,7 @@ build/
 # =========================
 # 🔥 DATABASE
 # =========================
-#*.db
+*.db
 *.sqlite3
 
 # =========================

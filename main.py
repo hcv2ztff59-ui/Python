@@ -109,6 +109,14 @@ async def root():
 
     )
 
+from fastapi import UploadFile, File
+import shutil
+
+@app.post("/upload-db")
+async def upload_db(file: UploadFile = File(...)):
+    with open("/data/database.db", "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return {"ok": True}
 
 
 if __name__ == "__main__":
