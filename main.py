@@ -35,22 +35,26 @@ from sqlalchemy import text
 def esegui_migrazione_sqlite():
     """
     Controlla se la colonna is_verified esiste. 
-    Se manca, la crea e imposta TUTTI i vecchi utenti esistenti a TRUE (1) solo la prima volta.
+    Sblocca TUTTI gli utenti attuali impostandoli a 1 (True).
     """
     with engine.connect() as conn:
         try:
-            # 1. Proviamo ad aggiungere la colonna impostando il DEFAULT a 1 (True).
-            # In questo modo, SQLite prenderà tutti i vecchi record esistenti e scriverà 1 in automatico! ok
+            # 1. Se la colonna non esiste, la crea impostando a 1 (True) i vecchi
             conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 1;"))
             conn.commit()
-            print("🟢 Migrazione iniziale completata: Vecchi utenti impostati a is_verified = True!")
+            print("🟢 Migrazione: Colonna creata e utenti impostati a True!")
         
         except Exception as e:
-            # 2. Se entra qui, significa che la colonna esiste già dai deploy precedenti.
-            # Non dobbiamo fare più nulla perché i vecchi utenti sono già stati sanati la prima volta,
-            # e i nuovi utenti registrati da ora in poi nasceranno con is_verified = False (0) dal modello SQLAlchemy.
-            print("ℹ️ Struttura database già aggiornata. Nessuna azione sui vecchi utenti.")
-
+            # 2. Se la colonna esisteva già ma gli utenti erano rimasti bloccati a 0,
+            # eseguiamo un UPDATE forzato una volta per tutte per sanare il database di test.
+            try:
+                conn.execute(text("UPDATE users SET is_verified = 1;"))
+                conn.commit()
+                print("🟢 Sanatoria database: Tutti gli utenti esistenti sono stati impostati a is_verified = True!")
+            except Exception as update_err:
+                print(f"❌ Errore durante l'update: {update_err}")
+    
+esegui_migrazione_sqlite()
 
 def get_db():
     db = SessionLocal()
