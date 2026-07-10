@@ -29,7 +29,23 @@ import os
 Base.metadata.create_all(bind=engine)
 
 #manager = SocketManage()
+from database import engine
+from sqlalchemy import text
 
+def esegui_migrazione_sqlite():
+    """Controlla se la colonna is_verified esiste a database; se manca, la aggiunge."""
+    with engine.connect() as conn:
+        try:
+            # Eseguiamo un comando DDL diretto per aggiornare la tabella users
+            conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 0;"))
+            conn.commit()
+            print("🟢 Migrazione SQLite completata: colonna 'is_verified' aggiunta con successo!")
+        except Exception as e:
+            # Se la colonna esiste già, SQLite solleverà un errore che possiamo ignorare
+            print("ℹ️ Controllo tabella 'users': colonna già presente o migrazione non necessaria.")
+
+# Lancia la migrazione prima che parta l'app
+esegui_migrazione_sqlite()
 
 
 def get_db():
