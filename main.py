@@ -40,7 +40,7 @@ def esegui_migrazione_sqlite():
     with engine.connect() as conn:
         try:
             # 1. Proviamo ad aggiungere la colonna impostando il DEFAULT a 1 (True).
-            # In questo modo, SQLite prenderà tutti i vecchi record esistenti e scriverà 1 in automatico!
+            # In questo modo, SQLite prenderà tutti i vecchi record esistenti e scriverà 1 in automatico! ok
             conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 1;"))
             conn.commit()
             print("🟢 Migrazione iniziale completata: Vecchi utenti impostati a is_verified = True!")
