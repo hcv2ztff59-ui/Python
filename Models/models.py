@@ -22,6 +22,7 @@ class User(Base):
     nickname: Mapped[Optional[str]] = mapped_column(String(100),unique=True,nullable=True)
     image_profile : Mapped[Optional[str]] = mapped_column(String(200), nullable= True)
     updated_user_datetime : Mapped[Optional[datetime]]  = mapped_column(DateTime(timezone=True),nullable=True)
+    is_verified : Mapped[Optional[bool]] = mapped_column(Boolean, default=False, nullable=True)
     notification_tokens = relationship(
         "NotificationToken",
         back_populates="user",
