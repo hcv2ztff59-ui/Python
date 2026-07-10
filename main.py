@@ -31,7 +31,7 @@ Base.metadata.create_all(bind=engine)
 #manager = SocketManage()
 from database import engine
 from sqlalchemy import text
-
+'''
 def esegui_migrazione_sqlite():
     """
     Controlla se la colonna is_verified esiste. 
@@ -55,6 +55,8 @@ def esegui_migrazione_sqlite():
                 print(f"❌ Errore durante l'update: {update_err}")
     
 esegui_migrazione_sqlite()
+'''
+
 
 def get_db():
     db = SessionLocal()
