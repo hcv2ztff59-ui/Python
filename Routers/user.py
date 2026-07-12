@@ -469,7 +469,7 @@ def get_profile_image(current_user = Depends(get_current_user), db: Session = De
     if not image_name:
         raise HTTPException(status_code=404)
 
-    image_path = Path("uploads/profile") / image_name
+    image_path = Path("/data/uploads/profile") / image_name
     return FileResponse(image_path)
 
 
@@ -479,9 +479,12 @@ async def upload_profile_image(image: UploadFile = File(...), current_user = Dep
     if not user:
         raise HTTPException(status_code=404, detail="Utente non trovato")
 
-    os.makedirs("uploads/profile", exist_ok=True)
+
+    # Nel metodo upload_profile_image cambia il percorso:
+    os.makedirs("/data/uploads/profile", exist_ok=True)
     filename = f"profile_{user.id}.jpg"
-    file_path = f"uploads/profile/{filename}"
+    file_path = f"/data/uploads/profile/{filename}"
+    
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(image.file, buffer)
@@ -492,7 +495,7 @@ async def upload_profile_image(image: UploadFile = File(...), current_user = Dep
     db.refresh(user)
     return {
         "message": "Immagine caricata",
-        "image_profile": file_path,
+        "image_profile": filename,
         "updated_user_datetime": user.updated_user_datetime
     }
 
@@ -668,7 +671,7 @@ def delete_profile(db: Session = Depends(get_db), current_user = Depends(get_cur
         
     try:
         if user.image_profile:
-            path = f"uploads/profile/{user.image_profile}"
+            path = f"/data/uploads/profile/{user.image_profile}"
             if os.path.exists(path):
                 os.remove(path)
         

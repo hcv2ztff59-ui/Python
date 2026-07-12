@@ -75,14 +75,14 @@ app = FastAPI()
 app.include_router(user)
 app.include_router(task)
 
-os.makedirs("uploads", exist_ok=True)
+os.makedirs("/data/uploads", exist_ok=True)
 
-os.makedirs("uploads/profile", exist_ok=True)
+os.makedirs("/data/uploads/profile", exist_ok=True)
 app.mount(
 
-    "/uploads",
+    "/data/uploads",
 
-    StaticFiles(directory="uploads"),
+    StaticFiles(directory="/data/uploads"),
 
     name="uploads"
 
