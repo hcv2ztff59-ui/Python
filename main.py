@@ -88,6 +88,35 @@ app.mount(
 
 )
 
+
+@app.get("/tasks")
+
+def debug_tasks(db: Session = Depends(get_db)):
+
+    tasks = db.query(Task).all()
+
+    return [
+
+        {
+
+            "id_task": t.id_task,
+
+            "titolo": t.titolo,
+
+            "user_id": t.user_id,
+
+            "isDeleted": t.isDeleted,
+
+            "datetime_task_last_update": t.datetime_task_last_update,
+
+            "completed": t.completato,
+
+        }
+
+        for t in tasks
+
+    ]
+
 @app.websocket("/ws")
 async def socket_endpoint(websocket: WebSocket):
     
