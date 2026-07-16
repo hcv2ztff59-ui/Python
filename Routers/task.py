@@ -331,7 +331,7 @@ async def update_change_notify(id_task:int,task_update: UpdateTask, db = Depends
     return {"msg":"Valori Aggiornati"}
 
 
-@router.post("/elimina_task/{id_task}")
+@router.delete("/elimina_task/{id_task}")
 async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends(get_current_user)):
     print(f"accesso effettuato come {current_user['email']}")
     print(f"id  {current_user['id_utente']} task ${id_task} taskdb ${Task.id_task} ")
