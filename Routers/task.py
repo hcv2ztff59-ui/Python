@@ -180,10 +180,12 @@ def visualizza_tasks(
         )
         .options(joinedload(Task.mentions))
         .filter(
+           
             or_(
                 Task.user_id == current_user["id_utente"],
-                TaskMentions.mentioned_user_id == current_user["id_utente"]
-            )
+                TaskMentions.mentioned_user_id == current_user["id_utente"],
+            ),
+        
         )
         .distinct()
         .all()
@@ -205,7 +207,7 @@ def visualizza_tasks(
 async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db), current_user = Depends(get_current_user)):
 
     print(f"accesso effettuato come {current_user['email']}")
-    task_db = db.query(Task).filter(Task.id_task == id_task,Task.user_id == current_user['id_utente']).first()
+    task_db = db.query(Task).filter(Task.id_task == id_task,Task.user_id == current_user['id_utente'], Task.isDeleted.is_(False)).first()
     if task_db is None:
         raise HTTPException(
 
@@ -325,7 +327,7 @@ async def update_change_notify(id_task:int,task_update: UpdateTask, db = Depends
     return {"msg":"Valori Aggiornati"}
 
 
-@router.delete("/elimina_task/{id_task}")
+@router.post("/elimina_task/{id_task}")
 async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends(get_current_user)):
     print(f"accesso effettuato come {current_user['email']}")
     print(f"id  {current_user['id_utente']} task ${id_task} taskdb ${Task.id_task} ")
@@ -333,7 +335,9 @@ async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends
     if not task_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task non trovato")
 
-   
+    task_db.isDeleted = True
+    task_db.datetime_task_last_update = datetime.now(timezone.utc)
+    db.commit()
     
     mentions = (
     db.query(TaskMentions)
@@ -370,9 +374,11 @@ async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends
                 db.commit()
 
     print("Elimino task")
-    db.delete(task_db)
-    db.commit()
-    print("Task eliminato")
+    
+   #db.delete(task_db)
+
+    
+    print("Task flag impostato come eliminato")
     
     return {"msg":"Task eliminato"}
    

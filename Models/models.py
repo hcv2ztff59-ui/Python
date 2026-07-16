@@ -86,6 +86,8 @@ class Task(Base):
         cascade="all, delete-orphan"
 
     )
+    isDeleted : Mapped[bool] = mapped_column(Boolean,default=False, index=True)
+    
 
 class Follow(Base):
     __tablename__ = "follow"

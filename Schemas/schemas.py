@@ -161,7 +161,8 @@ class GetTask(BaseModel):
     longitude  : Optional[float] = None 
     latitude : Optional[float] = None 
     isNearEnabled : Optional[bool] = False 
-
+    isDeleted : bool = False
+     
     @field_serializer("*", when_used="json")
     def serialize_datetime(self, value):
         if isinstance(value, datetime):
@@ -202,6 +203,7 @@ class UpdateTask(BaseModel):
     latitude : Optional[float] = None 
     isNearEnabled : Optional[bool] = False 
     mentions: Optional[list[MentionCreate]] = None
+    isDeleted : Optional[bool] = None
 
     class Config:
         from_attributes = True
