@@ -338,7 +338,7 @@ async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends
     task_db = db.query(Task).filter(Task.id_task == id_task,Task.user_id == current_user['id_utente']).first()
     if not task_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task non trovato")
-
+#
     task_db.isDeleted = True
     task_db.datetime_task_last_update = datetime.now(timezone.utc)
     db.commit()
