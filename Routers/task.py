@@ -169,10 +169,11 @@ def visualizza_tasks( db = Depends(get_db), current_user = Depends(get_current_u
 
 @router.get("/tutti_task_filtered", response_model=List[GetTask])
 def visualizza_tasks(
+    lastSync: Optional[datetime] = None,
     db=Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    tasks = (
+    query = (
         db.query(Task)
         .outerjoin(
             TaskMentions,
@@ -180,16 +181,19 @@ def visualizza_tasks(
         )
         .options(joinedload(Task.mentions))
         .filter(
-           
             or_(
                 Task.user_id == current_user["id_utente"],
                 TaskMentions.mentioned_user_id == current_user["id_utente"],
-            ),
-        
+            )
         )
-        .distinct()
-        .all()
     )
+
+    if lastSync is not None:
+        query = query.filter(
+            Task.datetime_task_last_update > lastSync
+        )
+
+    tasks = query.distinct().all()
 
     print("========== TASK RESTITUITI ==========")
     for t in tasks:
