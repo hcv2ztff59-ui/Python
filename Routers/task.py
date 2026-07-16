@@ -380,6 +380,6 @@ async def elimina_task(id_task:int, db = Depends(get_db), current_user = Depends
     
     print("Task flag impostato come eliminato")
     
-    return {"msg":"Task eliminato"}
+    return {"msg":"Task eliminato","datetime_task_last_update": task_db.datetime_task_last_update}
    
 
