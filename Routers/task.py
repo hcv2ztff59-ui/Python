@@ -301,7 +301,13 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
 
    
     
-    return {"msg":"Valori Aggiornati"}
+    return {
+
+    "msg": "Valori Aggiornati",
+
+    "datetime_task_last_update": task_db.datetime_task_last_update.isoformat()
+
+}
 
 
 # todo aggiornare per data ripetizione
