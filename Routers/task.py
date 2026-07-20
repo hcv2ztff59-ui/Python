@@ -221,11 +221,11 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
 
         )
 
-    if task_update.isToUpdate:
-        print("isToUpdate è vero, aggiorno data modifica")
-        task_update.datetime_task_last_update = datetime.now(timezone.utc)
-    else:
-        print("isToUpdate è false, non aggiorno data modifica")
+   # if task_update.isToUpdate:
+    #    print("isToUpdate è vero, aggiorno data modifica")
+    task_update.datetime_task_last_update = datetime.now(timezone.utc)
+    #else:
+     #   print("isToUpdate è false, non aggiorno data modifica")
     print(f"aggiornamento ore utc {datetime.now(timezone.utc)}")
     print(f"aggiornamento ore {datetime.now()}")
 
