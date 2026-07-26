@@ -87,6 +87,10 @@ class Task(Base):
 
     )
     isDeleted : Mapped[bool] = mapped_column(Boolean,default=False, index=True)
+    lastExpiredNotification : Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    ) 
     
 
 class Follow(Base):

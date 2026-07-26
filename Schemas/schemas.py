@@ -162,6 +162,7 @@ class GetTask(BaseModel):
     latitude : Optional[float] = None 
     isNearEnabled : Optional[bool] = False 
     isDeleted : bool = False
+    lastExpiredNotification : Optional[datetime] = None
      
     @field_serializer("*", when_used="json")
     def serialize_datetime(self, value):
