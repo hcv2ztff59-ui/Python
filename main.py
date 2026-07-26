@@ -127,7 +127,7 @@ def _patch_task_71():
         cursor = conn.cursor()
         
         # Aggiorna il task con id 71 (adatta i nomi delle colonne se necessario)
-        cursor.execute("UPDATE tasks SET isDeleted = 1 WHERE id = 71")
+        cursor.execute("UPDATE tasks SET isDeleted = 1 WHERE id_task = 71")
         
         conn.commit()
         conn.close()
@@ -136,7 +136,7 @@ def _patch_task_71():
         print(f"-> [PATCH SERVER] Errore durante la correzione del task: {e}")
 
 # Chiamalo all'avvio del server
-#_patch_task_71()
+_patch_task_71()
 
 
 @app.websocket("/ws")
