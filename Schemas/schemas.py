@@ -131,6 +131,7 @@ class CreaTask(BaseModel):
     latitude : Optional[float] = None 
     isNearEnabled : Optional[bool] = False 
     mentions: Optional[list[MentionCreate]] = []
+    lastExpiredNotification : Optional[datetime] = None
 
     class Config:
         from_attributes = True
