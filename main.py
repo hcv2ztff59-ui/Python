@@ -109,6 +109,7 @@ def debug_tasks(db: Session = Depends(get_db)):
             "isDeleted": t.isDeleted,
 
             "datetime_task_last_update": t.datetime_task_last_update,
+            "lastExpiredNotification": t.lastExpiredNotification,
 
             "completed": t.completato,
 
