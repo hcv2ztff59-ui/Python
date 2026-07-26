@@ -136,7 +136,7 @@ def _patch_task_71():
         print(f"-> [PATCH SERVER] Errore durante la correzione del task: {e}")
 
 # Chiamalo all'avvio del server
-_patch_task_71()
+#_patch_task_71()
 
 
 @app.websocket("/ws")
