@@ -118,6 +118,26 @@ def debug_tasks(db: Session = Depends(get_db)):
         for t in tasks
 
     ]
+    
+import sqlite3
+
+def _patch_task_71():
+    try:
+        conn = sqlite3.connect('/data/database.db')
+        cursor = conn.cursor()
+        
+        # Aggiorna il task con id 71 (adatta i nomi delle colonne se necessario)
+        cursor.execute("UPDATE tasks SET isDeleted = 1 WHERE id = 71")
+        
+        conn.commit()
+        conn.close()
+        print("-> [PATCH SERVER] Task 71 impostato con successo su isDeleted = 1")
+    except Exception as e:
+        print(f"-> [PATCH SERVER] Errore durante la correzione del task: {e}")
+
+# Chiamalo all'avvio del server
+_patch_task_71()
+
 
 @app.websocket("/ws")
 async def socket_endpoint(websocket: WebSocket):
