@@ -205,6 +205,7 @@ class UpdateTask(BaseModel):
     isNearEnabled : Optional[bool] = False 
     mentions: Optional[list[MentionCreate]] = None
     isDeleted : Optional[bool] = None
+    lastExpiredNotification : Optional[datetime] = None
 
     class Config:
         from_attributes = True
