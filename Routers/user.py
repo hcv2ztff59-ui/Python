@@ -153,6 +153,7 @@ def set_mention_read(
         raise HTTPException(status_code=403, detail="Non hai i permessi per modificare questa menzione")
 
     mention.read_at_time = datetime.now(timezone.utc)
+    mention.notification_read = True
     db.commit()
     db.refresh(mention)
 
@@ -213,6 +214,7 @@ def set_all_mentions_read(
     current_time = datetime.now(timezone.utc)
     for m in mentions:
         m.read_at_time = current_time
+        m.notification_read = True
 
     db.commit()
 
