@@ -73,7 +73,7 @@ def get_db():
 
 
 from sqlalchemy import text
-
+app = FastAPI()
 
 # --- OPZIONE: Esecuzione automatica all'avvio del server ---
 @app.on_event("startup")
@@ -105,7 +105,7 @@ def startup_migration():
         db.close() # Chiude sempre la sessione
 
 #app = FastAPI(lifespan=lifespan)
-app = FastAPI()
+
 
 
 app.include_router(user)
