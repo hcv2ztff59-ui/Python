@@ -137,7 +137,7 @@ def get_users(query: str, current_user = Depends(get_current_user), db: Session 
         for user in users
     ]
 
-@router.patch("set-mention-read/{mention_id}")
+@router.patch("/set-mention-read/{mention_id}")
 def set_mention_read(
     mention_id: int,
     current_user=Depends(get_current_user),
@@ -164,7 +164,7 @@ def set_mention_read(
         "mention_id": mention_id,
     }
 
-@router.patch("set-mention-deleted/{mention_id}")
+@router.patch("/set-mention-deleted/{mention_id}")
 def set_mention_deleted(
     mention_id: int,
     current_user=Depends(get_current_user),
@@ -194,7 +194,7 @@ def set_mention_deleted(
     }
 
 
-@router.patch("set-all-mention-read")
+@router.patch("/set-all-mention-read")
 def set_all_mentions_read(
     current_user=Depends(get_current_user), db: Session = Depends(get_db)
 ):
