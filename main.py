@@ -6,7 +6,7 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from Auth.Auth import get_current_user
-from Models.models import Task, NotificationToken
+from Models.models import Task, NotificationToken, TaskMentions
 from Routers.user import router as user
 from Routers.task import router as task
 from database import Base, engine, SessionLocal
@@ -155,6 +155,36 @@ def debug_tasks(db: Session = Depends(get_db)):
 
     ]
     
+@app.get("/mentions")
+
+def debug_mentions(db: Session = Depends(get_db)):
+
+    mentions = db.query(TaskMentions).all()
+
+    return [
+
+        {
+
+            "MentionedUser_id": t.mentioned_user_id,
+
+            "created_by_user_id": t.created_by_user_id,
+
+            "id": t.id,
+
+            "is_ui_deleted": t.is_ui_deleted,
+
+            "notification_read": t.notification_read,
+            "read_at_time": t.read_at_time,
+
+            "completed": t.completato,
+
+        }
+
+        for t in mentions
+
+    ]
+    
+
 import sqlite3
 
 def _patch_task_71():
