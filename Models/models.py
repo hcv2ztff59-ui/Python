@@ -126,6 +126,8 @@ class TaskMentions(Base):
     mentioned_user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     created_by_user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     notification_read: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    is_ui_deleted: Mapped[Optional[bool]] = mapped_column(Boolean, default=False, index=True)
+    read_at_time : Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     task = relationship(

@@ -31,6 +31,9 @@ Base.metadata.create_all(bind=engine)
 #manager = SocketManage()
 from database import engine
 from sqlalchemy import text
+
+
+
 '''
 def esegui_migrazione_sqlite():
     """
@@ -58,6 +61,8 @@ esegui_migrazione_sqlite()
 '''
 
 
+
+
 def get_db():
     db = SessionLocal()
     try:
@@ -66,6 +71,45 @@ def get_db():
         db.close()
 
 
+
+from sqlalchemy import text
+
+
+def run_migration_temp(db: Session = Depends(get_db)):
+    try:
+        # Eseguiamo i comandi SQL uno alla volta. 
+        # Se una colonna esiste già, SQLite restituirà un errore che intercettiamo.
+        queries = [
+            "ALTER TABLE task_mentions ADD COLUMN notification_read BOOLEAN DEFAULT 0;",
+            "ALTER TABLE task_mentions ADD COLUMN is_ui_deleted BOOLEAN DEFAULT 0;",
+            "ALTER TABLE task_mentions ADD COLUMN read_at_time TIMESTAMP;",
+            "ALTER TABLE task_mentions ADD COLUMN created_at TIMESTAMP;",
+            "CREATE INDEX IF NOT EXISTS idx_task_mentions_notification_read ON task_mentions(notification_read);",
+            "CREATE INDEX IF NOT EXISTS idx_task_mentions_is_ui_deleted ON task_mentions(is_ui_deleted);",
+            "CREATE INDEX IF NOT EXISTS idx_task_mentions_mentioned_user_id ON task_mentions(mentioned_user_id);",
+            "CREATE INDEX IF NOT EXISTS idx_task_mentions_created_by_user_id ON task_mentions(created_by_user_id);"
+        ]
+        
+        executed = []
+        for q in queries:
+            try:
+                db.execute(text(q))
+                db.commit()
+                executed.append(f"SUCCESS: {q}")
+            except Exception as sub_e:
+                db.rollback()
+                executed.append(f"SKIPPED/EXISTS: {q} (Errore: {str(sub_e)})")
+
+        return {
+            "message": "Migrazione completata!",
+            "details": executed
+        }
+        
+    except Exception as e:
+        db.rollback()
+        print(f"Errore durante la migrazione: {str(e)}")
+
+run_migration_temp()  # Esegui la migrazione all'avvio del server
 
 
 #app = FastAPI(lifespan=lifespan)
