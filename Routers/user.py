@@ -143,16 +143,13 @@ def set_mention_read(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    mention = (
-        db.query(TaskMentions)
-        .filter(TaskMentions.id == mention_id)
-        .first()
-    )
+    mention = db.query(TaskMentions).filter(TaskMentions.id == mention_id).first()
 
     if not mention:
         raise HTTPException(status_code=404, detail="Menzione non trovata")
 
-    if mention.created_by_user_id != current_user.id and mention.mentioned_user_id != current_user.id:
+    # Modifica qui: usa current_user["id_utente"]
+    if mention.created_by_user_id != current_user["id_utente"] and mention.mentioned_user_id != current_user["id_utente"]:
         raise HTTPException(status_code=403, detail="Non hai i permessi per modificare questa menzione")
 
     mention.read_at_time = datetime.now(timezone.utc)
@@ -164,24 +161,20 @@ def set_mention_read(
         "mention_id": mention_id,
     }
 
+
 @router.patch("/set-mention-deleted/{mention_id}")
 def set_mention_deleted(
     mention_id: int,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Cerchiamo la menzione specifica tramite il suo ID
-    mention = (
-        db.query(TaskMentions)
-        .filter(TaskMentions.id == mention_id)
-        .first()
-    )
+    mention = db.query(TaskMentions).filter(TaskMentions.id == mention_id).first()
 
     if not mention:
         raise HTTPException(status_code=404, detail="Menzione non trovata")
 
-    # Opzionale ma consigliato: verifica che l'utente corrente sia il creatore o il destinatario
-    if mention.created_by_user_id != current_user.id and mention.mentioned_user_id != current_user.id:
+    # Modifica qui: usa current_user["id_utente"]
+    if mention.created_by_user_id != current_user["id_utente"] and mention.mentioned_user_id != current_user["id_utente"]:
         raise HTTPException(status_code=403, detail="Non hai i permessi per eliminare questa menzione")
 
     mention.is_ui_deleted = True
@@ -194,6 +187,7 @@ def set_mention_deleted(
     }
 
 
+
 @router.patch("/set-all-mention-read")
 def set_all_mentions_read(
     current_user=Depends(get_current_user), db: Session = Depends(get_db)
@@ -202,8 +196,9 @@ def set_all_mentions_read(
         db.query(TaskMentions)
         .filter(
             or_(
-                TaskMentions.created_by_user_id == current_user.id,
-                TaskMentions.mentioned_user_id == current_user.id,
+                # Modifica qui: usa current_user["id_utente"]
+                TaskMentions.created_by_user_id == current_user["id_utente"],
+                TaskMentions.mentioned_user_id == current_user["id_utente"],
             ),
             TaskMentions.read_at_time == None,
         )
@@ -225,7 +220,6 @@ def set_all_mentions_read(
         "message": "Tutte le menzioni sono state impostate come lette con successo",
         "updated_count": len(mentions),
     }
-
 
 
 @router.get("/remove-friend")
