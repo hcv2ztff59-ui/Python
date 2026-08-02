@@ -22,7 +22,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 
-
+# end point per menzioni debug https://python-production-5e31.up.railway.app/mentions
 
 #todo se il server si spegne o ha un ionterruzzione deve ricalcolare tutte le date dei task
 
