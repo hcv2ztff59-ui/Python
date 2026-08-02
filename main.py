@@ -164,18 +164,12 @@ def debug_mentions(db: Session = Depends(get_db)):
     return [
 
         {
-
-            "MentionedUser_id": t.mentioned_user_id,
-
-            "created_by_user_id": t.created_by_user_id,
-
             "id": t.id,
-
+            "mentioned_user_id": t.mentioned_user_id,
+            "created_by_user_id": t.created_by_user_id,
             "is_ui_deleted": t.is_ui_deleted,
-
             "notification_read": t.notification_read,
             "read_at_time": t.read_at_time,
-
             "created_at": t.created_at,
             "task_id": t.task_id
 

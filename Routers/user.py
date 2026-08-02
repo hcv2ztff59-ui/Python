@@ -188,6 +188,40 @@ def set_mention_deleted(
     }
 
 
+@router.get("/get-all-mentions")
+def get_all_mentions(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    # Recupera tutte le menzioni che coinvolgono l'utente corrente (come creatore o destinatario)
+    # unendole con la tabella User per ricavare i dati del profilo
+    mentions = (
+        db.query(TaskMentions, User)
+        .join(User, User.id == TaskMentions.mentioned_user_id)
+        .filter(
+            or_(
+                TaskMentions.created_by_user_id == current_user["id_utente"],
+                TaskMentions.mentioned_user_id == current_user["id_utente"]
+            )
+        )
+        .all()
+    )
+
+    return [
+        {
+            "id": mention.id,
+            "task_id": mention.task_id,
+            "mentioned_user_id": mention.mentioned_user_id,
+            "created_by_user_id": mention.created_by_user_id,
+            "nickname": user.nickname,
+            "email": user.email,
+            "name": user.nome_utente,
+            "image_profile": user.image_profile,
+            "notification_read": mention.notification_read,
+            "is_ui_deleted": mention.is_ui_deleted,
+            "read_at_time": mention.read_at_time,
+            "created_at": mention.created_at,
+            "is_shared_by_me": mention.created_by_user_id == current_user["id_utente"]
+        }
+        for mention, user in mentions
+    ]
 
 @router.patch("/set-all-mention-read")
 def set_all_mentions_read(
