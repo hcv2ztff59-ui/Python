@@ -176,7 +176,7 @@ def debug_mentions(db: Session = Depends(get_db)):
             "notification_read": t.notification_read,
             "read_at_time": t.read_at_time,
 
-            "completed": t.completato,
+            "created_at": t.created_at,
 
         }
 
