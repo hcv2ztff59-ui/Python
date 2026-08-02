@@ -75,10 +75,11 @@ def get_db():
 from sqlalchemy import text
 
 
-def run_migration_temp(db: Session = Depends(get_db)):
+# --- OPZIONE: Esecuzione automatica all'avvio del server ---
+@app.on_event("startup")
+def startup_migration():
+    db = SessionLocal() # Crea una sessione manualmente
     try:
-        # Eseguiamo i comandi SQL uno alla volta. 
-        # Se una colonna esiste già, SQLite restituirà un errore che intercettiamo.
         queries = [
             "ALTER TABLE task_mentions ADD COLUMN notification_read BOOLEAN DEFAULT 0;",
             "ALTER TABLE task_mentions ADD COLUMN is_ui_deleted BOOLEAN DEFAULT 0;",
@@ -90,27 +91,18 @@ def run_migration_temp(db: Session = Depends(get_db)):
             "CREATE INDEX IF NOT EXISTS idx_task_mentions_created_by_user_id ON task_mentions(created_by_user_id);"
         ]
         
-        executed = []
         for q in queries:
             try:
                 db.execute(text(q))
                 db.commit()
-                executed.append(f"SUCCESS: {q}")
-            except Exception as sub_e:
-                db.rollback()
-                executed.append(f"SKIPPED/EXISTS: {q} (Errore: {str(sub_e)})")
-
-        return {
-            "message": "Migrazione completata!",
-            "details": executed
-        }
-        
+            except Exception:
+                db.rollback() # Ignora l'errore se la colonna/indice esiste già
+                
+        print("Migrazione automatica completata con successo!")
     except Exception as e:
-        db.rollback()
-        print(f"Errore durante la migrazione: {str(e)}")
-
-run_migration_temp()  # Esegui la migrazione all'avvio del server
-
+        print(f"Errore durante la migrazione: {e}")
+    finally:
+        db.close() # Chiude sempre la sessione
 
 #app = FastAPI(lifespan=lifespan)
 app = FastAPI()
