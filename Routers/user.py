@@ -156,7 +156,24 @@ def set_mention_read(
     mention.notification_read = True
     db.commit()
     db.refresh(mention)
-
+    
+    tokens = db.query(NotificationToken).filter(NotificationToken.id_user_ref == mention.mentioned_user_id).all()
+    user = db.query(User).filter(User.id == current_user["id_utente"]).first()
+    for token in tokens:
+            try:
+                invia_push_notifica(
+                    token.fcm_token,
+                    user.nickname,
+                    user.id,
+                    "Notifica di lettura",
+                    f"{user.nickname} ha letto la menzione",
+                    "notify_when_read",
+                   
+                )
+            except UnregisteredError:
+                db.query(NotificationToken).filter(NotificationToken.fcm_token == token.fcm_token).delete()
+                db.commit()
+    
     return {
         "message": "Menzione impostata come letta con successo",
         "mention_id": mention_id,
