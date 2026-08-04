@@ -200,7 +200,7 @@ def get_all_mentions(current_user=Depends(get_current_user), db: Session = Depen
                 TaskMentions.created_by_user_id == current_user["id_utente"],
                 TaskMentions.mentioned_user_id == current_user["id_utente"]
             ),
-            TaskMentions.is_ui_deleted == False
+        #TaskMentions.is_ui_deleted == False
         )
         .all()
     )
