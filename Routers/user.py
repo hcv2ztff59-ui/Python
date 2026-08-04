@@ -176,7 +176,7 @@ def set_mention_read(
     
     return {
         "message": "Menzione impostata come letta con successo",
-        "mention_id": mention.id,
+        "id": mention.id,
     }
 
 
