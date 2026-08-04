@@ -188,13 +188,14 @@ def visualizza_tasks(
         )
     )
 
+    # Se viene passata una data (anche quella del 2000 in caso di reset), filtriamo
     if lastSync is not None:
         query = query.filter(
             Task.datetime_task_last_update > lastSync
         )
 
     tasks = query.distinct().all()
-
+    
     print("========== TASK RESTITUITI ==========")
     for t in tasks:
         print(
