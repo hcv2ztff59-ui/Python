@@ -26,9 +26,7 @@ from Auth.Auth import (
 )
 from Models.models import User, NotificationToken, Follow, TaskMentions, Task, SharedPosition
 from Schemas.schemas import (
-    SharedPositionCreate,   
-    SharedPositionResponse,
-    SharedPositionUpdate,
+
     AddFriendRequest,
     RegistraUtente,
     Login,
@@ -864,76 +862,4 @@ def delete_profile(db: Session = Depends(get_db), current_user = Depends(get_cur
     except Exception:
         db.rollback()
         raise
-
-
-@router.post("/create_shared_position", response_model=SharedPositionResponse, status_code=status.HTTP_201_CREATED)
-def create_shared_position(
-    position_in: SharedPositionCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user) # Utente che avvia la condivisione
-):
-    """
-    Crea una nuova richiesta di condivisione posizione verso un altro utente.
-    """
-    db_position = SharedPosition(
-        id_task_ref=position_in.id_task_ref,
-        location_name=position_in.location_name,
-        longitude=position_in.longitude,
-        latitude=position_in.latitude,
-        id_user_start=current_user["id_utente"], # Preso dal token di autenticazione
-        id_user_end=position_in.id_user_end,
-        share_accepted=False # Di default parte non accettato
-    )
-    
-    db.add(db_position)
-    db.commit()
-    db.refresh(db_position)
-    return db_position
-
-
-@router.get("/get_user_shared_positions", response_model=List[SharedPositionResponse])
-def get_user_shared_positions(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Restituisce tutte le posizioni in cui l'utente corrente è coinvolto 
-    (sia come mittente che come destinatario).
-    """
-    positions = db.query(SharedPosition).filter(
-        (SharedPosition.id_user_start == current_user["id_utente"]) | 
-        (SharedPosition.id_user_end == current_user["id_utente"])
-    ).all()
-    
-    return positions
-
-
-@router.patch("/accept_shared_position/{position_id}/accept", response_model=SharedPositionResponse)
-def accept_shared_position(
-    position_id: int,
-    position_update: SharedPositionUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Permette all'utente destinatario (id_user_end) di accettare o rifiutare la condivisione.
-    """
-    db_position = db.query(SharedPosition).filter(SharedPosition.id == position_id).first()
-    
-    if not db_position:
-        raise HTTPException(status_code=404, detail="Condivisione posizione non trovata.")
-    
-    # Verifica che sia proprio l'utente destinatario a poter accettare
-    if db_position.id_user_end != current_user["id_utente"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail="Non hai i permessi per modificare questa condivisione."
-        )
-    
-    db_position.share_accepted = position_update.share_accepted
-    db.commit()
-    db.refresh(db_position)
-    
-    return db_position
-
 
