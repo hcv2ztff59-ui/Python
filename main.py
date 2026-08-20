@@ -182,22 +182,28 @@ def debug_mentions(db: Session = Depends(get_db)):
 
 import sqlite3
 
-def _patch_task_71():
+def upgrade_database():
+    db = SessionLocal()
     try:
-        conn = sqlite3.connect('/data/database.db')
-        cursor = conn.cursor()
+        # Controlliamo se le colonne esistono, altrimenti le aggiungiamo
+        columns = db.execute(text("PRAGMA table_info(tasks)")).fetchall()
+        column_names = [col[1] for col in columns]
         
-        # Aggiorna il task con id 71 (adatta i nomi delle colonne se necessario)
-        cursor.execute("UPDATE tasks SET isDeleted = 1 WHERE id_task = 71")
+        if "share_position" not in column_names:
+            print("Aggiunta colonna share_position...")
+            db.execute(text("ALTER TABLE tasks ADD COLUMN share_position BOOLEAN DEFAULT 0"))
         
-        conn.commit()
-        conn.close()
-        print("-> [PATCH SERVER] Task 71 impostato con successo su isDeleted = 1")
+        if "share_acepted" not in column_names:
+            print("Aggiunta colonna share_acepted...")
+            db.execute(text("ALTER TABLE tasks ADD COLUMN share_acepted BOOLEAN DEFAULT 0"))
+            
+        db.commit()
     except Exception as e:
-        print(f"-> [PATCH SERVER] Errore durante la correzione del task: {e}")
-
+        print(f"Errore durante l'aggiornamento DB: {e}")
+    finally:
+        db.close()
 # Chiamalo all'avvio del server
-#_patch_task_71()
+upgrade_database()
 
 
 @app.websocket("/ws")
