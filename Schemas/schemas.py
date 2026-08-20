@@ -208,6 +208,8 @@ class UpdateTask(BaseModel):
     longitude  : Optional[float] = None 
     latitude : Optional[float] = None 
     isNearEnabled : Optional[bool] = False 
+    share_position: Optional[bool] = False
+    share_acepted: Optional[bool] = False
     mentions: Optional[list[MentionCreate]] = None
     isDeleted : Optional[bool] = None
     lastExpiredNotification : Optional[datetime] = None
