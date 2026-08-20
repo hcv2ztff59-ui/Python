@@ -270,6 +270,7 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
                 mentioned_user_id=m["mentioned_user_id"],
                 created_by_user_id=m["created_by_user_id"],
                 notification_read=m["notification_read"],
+                share_position = m["share_position"],
                 created_at=m["created_at"]
             )
             for m in mentions
