@@ -24,7 +24,7 @@ from Auth.Auth import (
     password_recovery_token,
     verify_reset_password
 )
-from Models.models import User, NotificationToken, Follow, TaskMentions, Task, SharedPosition
+from Models.models import User, NotificationToken, Follow, TaskMentions, Task
 from Schemas.schemas import (
 
     AddFriendRequest,
