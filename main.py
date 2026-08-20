@@ -159,7 +159,7 @@ def debug_tasks(db: Session = Depends(get_db)):
 
 def debug_mentions(db: Session = Depends(get_db)):
 
-    mentions = db.query(TaskMentions).all()
+    mentions = db.query(TaskMentions).filter(TaskMentions.is_ui_deleted == False).all()
 
     return [
 
