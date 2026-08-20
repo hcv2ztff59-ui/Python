@@ -146,6 +146,7 @@ def debug_tasks(db: Session = Depends(get_db)):
 
             "datetime_task_last_update": t.datetime_task_last_update,
             "lastExpiredNotification": t.lastExpiredNotification,
+            "share_position":t.share_position,
 
             "completed": t.completato,
 
