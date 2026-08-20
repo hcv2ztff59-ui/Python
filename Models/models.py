@@ -6,6 +6,11 @@ from enum import IntEnum
 from database import Base
 from sqlalchemy import UniqueConstraint
 
+
+
+
+
+    
 class TaskPriority(IntEnum):
     low = 0
     medium = 1
@@ -63,6 +68,8 @@ class Task(Base):
     longitude : Mapped[float] = mapped_column(Float,nullable= True)
     latitude : Mapped[float] = mapped_column(Float,nullable= True)
     isNearEnabled : Mapped[bool] = mapped_column(Boolean,default=False)
+    share_position :Mapped[Optional[bool]] = mapped_column(Boolean, default=False, nullable=False)
+    share_acepted:Mapped[Optional[bool]] = mapped_column(Boolean, default=False, nullable=False)
     priority: Mapped[int] = mapped_column(Integer,default=TaskPriority.medium.value)
     is_all_day: Mapped[bool] = mapped_column(Boolean)
     all_day_datetime: Mapped[Optional[datetime]] = mapped_column(

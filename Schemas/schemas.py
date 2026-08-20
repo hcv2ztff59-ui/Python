@@ -130,6 +130,8 @@ class CreaTask(BaseModel):
     longitude  : Optional[float] = None 
     latitude : Optional[float] = None 
     isNearEnabled : Optional[bool] = False 
+    share_position: Optional[bool] = False
+    share_acepted: Optional[bool] = False
     mentions: Optional[list[MentionCreate]] = []
     lastExpiredNotification : Optional[datetime] = None
 
@@ -162,6 +164,8 @@ class GetTask(BaseModel):
     longitude  : Optional[float] = None 
     latitude : Optional[float] = None 
     isNearEnabled : Optional[bool] = False 
+    share_position: Optional[bool] = False
+    share_acepted: Optional[bool] = False
     isDeleted : bool = False
     lastExpiredNotification : Optional[datetime] = None
      
