@@ -79,7 +79,7 @@ async def crea_task(task: CreaTask, db = Depends(get_db), current_user = Depends
                        longitude = task.longitude,
                        latitude = task.latitude,
                        share_position = task.share_position,
-                       share_accepted = task.share_acepted,
+                       share_acepted = task.share_acepted,
                        isNearEnabled = task.isNearEnabled
                        
                        )
