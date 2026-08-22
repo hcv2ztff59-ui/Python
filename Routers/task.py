@@ -313,6 +313,8 @@ async def modifica_task(id_task:int,task_update: UpdateTask, db = Depends(get_db
 }
 
 
+
+
 # todo aggiornare per data ripetizione
 @router.patch("/update_change_notify")
 async def update_change_notify(id_task:int,task_update: UpdateTask, db = Depends(get_db), current_user = Depends(get_current_user)):

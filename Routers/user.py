@@ -68,6 +68,15 @@ def _get_user_counts(user_id: int, db: Session):
     }
 
 
+@router.get("/getPositionLive")
+def getPositionLive(task_id: int, db: Session = Depends(get_db)):
+    # Recupera dal database la latitudine e longitudine associate al task_id
+    # e restituisci un JSON tipo: {"latitude": 37.33, "longitude": -122.04}
+    task = db.query(Task).filter(Task.id_task == task_id).first()
+    return {"latitude":  task.latitude,
+            "longitude": task.longitude,
+            "location_name":task.location_name}
+
 @router.post("/login")
 def login(user_in: Login, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_in.email).first()
