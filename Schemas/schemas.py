@@ -190,10 +190,10 @@ class UpdateTask(BaseModel):
     completedAt : Optional[datetime] = None 
     titolo : Optional[str] = None
     completato : Optional[bool] = None
-    notificationEnabled : bool = None
+    notificationEnabled : Optional[bool] = None  # 👈 Corretto in Optional
     notify_before : Optional[int] = None
     user_id : Optional[int] = None
-    isRepeating :bool = False
+    isRepeating : bool = False
     every : Optional[int] = None
     option : Optional[str] = None
     end_recurrency_time : Optional[int] = None
@@ -203,8 +203,8 @@ class UpdateTask(BaseModel):
     priority: Optional[TaskPriority] = None
     is_all_day: bool = False    
     all_day_datetime: Optional[datetime] = None
-    category : Optional[str]
-    location_name :Optional[str] = None
+    category : Optional[str] = None      # 👈 Aggiunto = None mancante!
+    location_name : Optional[str] = None
     longitude  : Optional[float] = None 
     latitude : Optional[float] = None 
     isNearEnabled : Optional[bool] = False 
@@ -216,6 +216,7 @@ class UpdateTask(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class RefreshRequest(BaseModel):
     refresh_token: str
