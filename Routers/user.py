@@ -329,7 +329,7 @@ def remove_mention(task_id: int, id_user_mentioned: int, current_user = Depends(
     print("REMOVE MENTION CHIAMATO")
 
     mentions = db.query(TaskMentions).filter(TaskMentions.task_id == task_id).all()
-       mentions = db.query(TaskMentions).filter(TaskMentions.task_id == task_id).all()
+     
     if not mentions:
         print("❌ ERRORE: Nessuna menzione trovata per questo task_id nel database.")
         raise HTTPException(status_code=404, detail="Nessuna menzione trovata")
