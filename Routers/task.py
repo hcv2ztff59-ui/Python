@@ -162,6 +162,7 @@ def visualizza_tasks_filtered(
             or_(
                 Task.user_id == current_user["id_utente"],
                 TaskMentions.mentioned_user_id == current_user["id_utente"],
+                
             )
         )
     )
@@ -195,6 +196,48 @@ def visualizza_tasks_filtered(
         )
 
     return tasks
+
+
+from typing import List, Optional
+from fastapi import Query
+from datetime import datetime
+
+@router.get("/check_if_removed_mention", response_model=List[int])
+def check_if_removed_mention(
+    task_ids: List[int] = Query(default=[]),       # ID passati da Isar
+    lastSync: Optional[datetime] = None,         
+    db=Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    query = (
+        db.query(Task.id_task)  # Selezioniamo direttamente solo l'ID
+        .outerjoin(
+            TaskMentions,
+            Task.id_task == TaskMentions.task_id
+        )
+        .filter(
+            or_(
+                Task.user_id == current_user["id_utente"],
+                TaskMentions.mentioned_user_id == current_user["id_utente"],
+            )
+        )
+    )
+
+    # Se l'app passa una lista di ID da Isar, filtriamo solo su quelli
+    if task_ids:
+        query = query.filter(Task.id_task.in_(task_ids))
+
+    if lastSync is not None:
+        if lastSync.tzinfo is not None:
+            lastSync = lastSync.replace(tzinfo=None)
+        query = query.filter(Task.datetime_task_last_update > lastSync)
+
+    # .scalars().all() restituisce direttamente una lista di interi (gli ID)
+    task_ids_result = query.distinct().scalars().all()
+    
+    print(f"========== ID TASK RESTITUITI: {task_ids_result} ==========")
+
+    return task_ids_result
 
 
 @router.patch("/modifica_task")
