@@ -198,23 +198,21 @@ def visualizza_tasks_filtered(
     return tasks
 
 
-from typing import List, Optional
-from fastapi import Query
-from datetime import datetime
+from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query
+
 
 @router.get("/check_if_removed_mention", response_model=List[int])
 def check_if_removed_mention(
-    task_ids: List[int] = Query(default=[]),       # ID passati da Isar
+    task_ids: List[int] = Query(default=[]),       
     lastSync: Optional[datetime] = None,         
     db=Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    query = (
-        db.query(Task.id_task)  # Selezioniamo direttamente solo l'ID
-        .outerjoin(
-            TaskMentions,
-            Task.id_task == TaskMentions.task_id
-        )
+    # Costruiamo la dichiarazione con select() anziché db.query()
+    stmt = (
+        select(Task.id_task)
+        .outerjoin(TaskMentions, Task.id_task == TaskMentions.task_id)
         .filter(
             or_(
                 Task.user_id == current_user["id_utente"],
@@ -223,17 +221,16 @@ def check_if_removed_mention(
         )
     )
 
-    # Se l'app passa una lista di ID da Isar, filtriamo solo su quelli
     if task_ids:
-        query = query.filter(Task.id_task.in_(task_ids))
+        stmt = stmt.filter(Task.id_task.in_(task_ids))
 
     if lastSync is not None:
         if lastSync.tzinfo is not None:
             lastSync = lastSync.replace(tzinfo=None)
-        query = query.filter(Task.datetime_task_last_update > lastSync)
+        stmt = stmt.filter(Task.datetime_task_last_update > lastSync)
 
-    # .scalars().all() restituisce direttamente una lista di interi (gli ID)
-    task_ids_result = query.distinct().scalars().all()
+    # Qui .scalars().all() funziona perfettamente perché execute() restituisce un Result
+    task_ids_result = db.scalars(stmt.distinct()).all()
     
     print(f"========== ID TASK RESTITUITI: {task_ids_result} ==========")
 
