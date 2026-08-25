@@ -168,6 +168,8 @@ def visualizza_tasks_filtered(
 
     if lastSync is not None:
         # --- BLOCCO DI DEBUG ---
+        if lastSync.tzinfo is not None:
+            lastSync = lastSync.replace(tzinfo=None)
         print(f"DEBUG lastSync ricevuto: {lastSync} (Tipo: {type(lastSync)})")
         
         latest_task = db.query(Task).order_by(Task.datetime_task_last_update.desc()).first()
