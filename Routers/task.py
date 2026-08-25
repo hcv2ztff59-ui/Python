@@ -209,6 +209,7 @@ def check_if_removed_mention(
     db=Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    #mi deve dare le menzioni rimosse ... come ???? solo task last sync se snon amico 
     # Costruiamo la dichiarazione con select() anziché db.query()
     stmt = (
         select(Task.id_task)
@@ -216,6 +217,7 @@ def check_if_removed_mention(
         .filter(
             or_(
                 Task.user_id == current_user["id_utente"],
+                
                 TaskMentions.mentioned_user_id == current_user["id_utente"],
             )
         )
@@ -224,10 +226,10 @@ def check_if_removed_mention(
     if task_ids:
         stmt = stmt.filter(Task.id_task.in_(task_ids))
 
-    if lastSync is not None:
-        if lastSync.tzinfo is not None:
-            lastSync = lastSync.replace(tzinfo=None)
-        stmt = stmt.filter(Task.datetime_task_last_update > lastSync)
+    #if lastSync is not None:
+       # if lastSync.tzinfo is not None:
+      #      lastSync = lastSync.replace(tzinfo=None)
+     #   stmt = stmt.filter(Task.datetime_task_last_update > lastSync)
 
     # Qui .scalars().all() funziona perfettamente perché execute() restituisce un Result
     task_ids_result = db.scalars(stmt.distinct()).all()
