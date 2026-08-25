@@ -167,6 +167,16 @@ def visualizza_tasks_filtered(
     )
 
     if lastSync is not None:
+        # --- BLOCCO DI DEBUG ---
+        print(f"DEBUG lastSync ricevuto: {lastSync} (Tipo: {type(lastSync)})")
+        
+        latest_task = db.query(Task).order_by(Task.datetime_task_last_update.desc()).first()
+        if latest_task:
+            print(f"DEBUG Task più recente nel DB: {latest_task.datetime_task_last_update} (Tipo: {type(latest_task.datetime_task_last_update)})")
+        else:
+            print("DEBUG Nessun task trovato nel database.")
+        # -----------------------
+
         query = query.filter(
             Task.datetime_task_last_update > lastSync
         )
