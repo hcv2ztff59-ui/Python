@@ -376,7 +376,7 @@ def remove_mention(task_id: int, id_user_mentioned: int, current_user = Depends(
         for token in tokens:
             invia_push_silenziosa(
                 token.fcm_token,
-                "refresh",
+                "mention_deleted",
                 extra_data=counts
             )
 
@@ -393,14 +393,14 @@ def remove_mention(task_id: int, id_user_mentioned: int, current_user = Depends(
             for token in tokens:
                 invia_push_silenziosa(
                     token.fcm_token,
-                    "refresh",
+                    "mention_deleted",
                     extra_data=counts
                 )
         except UnregisteredError:
             db.query(NotificationToken).filter(NotificationToken.fcm_token == token.fcm_token).delete()
             db.commit()
 
-    return {"success": True}
+    return {"success": True,"id_task" :task.id_task if task else None,"mention_id":mention.id if mention else None}
 
 
 @router.get("/notifications-count")
